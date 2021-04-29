@@ -280,7 +280,178 @@ end
 luigi_hqlin = hqlin(bayer_luigi)
 
 # ╔═╡ 2b67027a-77a0-40c0-9afc-f52da41d9b2b
-[luigi luigi_bilineare_interpolation luigi_hqlin]
+begin
+	compare_images = [luigi luigi_bilineare_interpolation luigi_hqlin]
+	imresize(compare_images, ratio=5)
+end
+
+# ╔═╡ d4e7a7f1-929c-4be7-943d-4267cedacfc2
+
+
+# ╔═╡ 48e4ae5d-5423-442c-9b4e-712f42b84bc2
+function acpi_green_channel(bayer_filter)
+	acpi_green_channel = copy(bayer_filter)
+	(height, width) = size(bayer_filter)
+	# ungerade Bildzeilen, in denen nur grüne und rote hotpixel sind
+	for row in 3:2:height-2
+		# rotes hotpixel
+		for column in 4:2:width-2
+			# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
+			# 1.1 horizontaler gradient
+			g_horizontal = abs(conv(bayer_filter[row, column-1].g) - conv(bayer_filter[row, column+1].g)) + abs(- conv(bayer_filter[row, column-2].r) + 2*conv(bayer_filter[row, column].r - conv(bayer_filter[row, column+2].r)))
+			# 1.2 vertikaler gradient
+			g_vertical = abs(conv(bayer_filter[row-1, column].g) - conv(bayer_filter[row+1, column].g)) + abs(- conv(bayer_filter[row-2, column].r) + 2*conv(bayer_filter[row, column].r - conv(bayer_filter[row+2, column].r)))
+			
+			# horizontaler gradient größer => vertikale kante => vertikale grünwerte für berechnung sinnvoller, da hier keine großen farbänderungen sind
+			if g_vertical > g_horizontal
+				# horizontale bilineare interpolation
+				green = 0.5 * (conv(bayer_filter[row, column-1].g) + conv(bayer_filter[row, column+1].g))
+				# horizontalen Laplace Anteil addieren
+				green += 0.25 * (- conv(bayer_filter[row, column-2].r) + 2*conv(bayer_filter[row, column].r - conv(bayer_filter[row, column+2].r)))
+			else
+				# vertikale bilineare interpolation
+				green = 0.5 * (conv(bayer_filter[row-1, column].g) + conv(bayer_filter[row+1, column].g)) 
+				# vertikalen Laplace-Anteil addieren
+				green += 0.25 * (- conv(bayer_filter[row-2, column].r) + 2*conv(bayer_filter[row, column].r - conv(bayer_filter[row+2, column].r)))
+			end
+			
+			# grünwert zum rekonstruieren des grünkanals setzen
+			green = clamp(green, 0.0, 1.0)
+			acpi_green_channel[row, column] = RGB(bayer_filter[row, column].r, green, 0)
+			
+		end
+	end
+	
+	# geraden Bildzeilen
+	for row in 4:2:height-2
+		# blaues hotpixel
+		for column in 3:2:width-2
+			# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
+			# 1.1 horizontaler gradient
+			g_horizontal = abs(conv(bayer_filter[row, column-1].g) - conv(bayer_filter[row, column+1].g)) + abs(- conv(bayer_filter[row, column-2].b) + 2*conv(bayer_filter[row, column].b - conv(bayer_filter[row, column+2].b)))
+			# 1.2 vertikaler gradient
+			g_vertical = abs(conv(bayer_filter[row-1, column].g) - conv(bayer_filter[row+1, column].g)) + abs(- conv(bayer_filter[row-2, column].b) + 2*conv(bayer_filter[row, column].b - conv(bayer_filter[row+2, column].b)))
+			
+			# 2. grünwerte bestimmen
+			# horizontaler gradient größer => vertikale kante => vertikale grünwerte für berechnung sinnvoller, da hier keine großen farbänderungen sind
+			if g_vertical > g_horizontal
+				# horizontale bilineare interpolation
+				green = 0.5 * (conv(bayer_filter[row, column-1].g) + conv(bayer_filter[row, column+1].g))
+				# horizontalen Laplace Anteil addieren
+				green += 0.25 * (- conv(bayer_filter[row, column-2].b) + 2*conv(bayer_filter[row, column].b - conv(bayer_filter[row, column+2].b)))
+			else
+				# vertikale bilineare interpolation
+				green = 0.5 * (conv(bayer_filter[row-1, column].g) + conv(bayer_filter[row+1, column].g)) 
+				# vertikalen Laplace-Anteil addieren
+				green += 0.25 * (- conv(bayer_filter[row-2, column].b) + 2*conv(bayer_filter[row, column].b - conv(bayer_filter[row+2, column].b)))
+			end
+			# grünwert zum rekonstruieren des grünkanals setzen
+			green = clamp(green, 0.0, 1.0)
+			acpi_green_channel[row, column] = RGB(0, green, bayer_filter[row, column].b)
+		end
+	end
+	
+	#return acpi
+	return acpi_green_channel
+end
+
+# ╔═╡ c00ec842-85a5-4554-94ce-628f28d34b09
+begin
+	acpi_green_luigi = acpi_green_channel(bayer_luigi)
+	[bayer_luigi acpi_green_luigi]
+end
+
+# ╔═╡ 211756ce-1b62-491b-9914-a82cfdb663fa
+function acpi_red_green(acpi_green_channel)
+	acpi = copy(acpi_green_channel)
+	(height, width) = size(acpi_green_channel)
+	# Bildzeilen, in denen nur grüne und rote hotpixel sind
+	for row in 3:2:height-2
+		# grünes hotpixel
+		for column in 3:2:width-2
+			red = 0.5*(conv(acpi_green_channel[row, column-1].r) + conv(acpi_green_channel[row, column+1].r)) + 0.5 * (-conv(acpi_green_channel[row, column-1].g) + 2*conv(acpi_green_channel[row, column].g) - conv(acpi_green_channel[row, column+1].g))
+			blue = 0.5*(conv(acpi_green_channel[row-1, column].b) + conv(acpi_green_channel[row+1, column].b)) + 0.5 * (-conv(acpi_green_channel[row-1, column].g) + 2*conv(acpi_green_channel[row, column].g) - conv(acpi_green_channel[row+1, column].g))
+			
+			# nur noch werte zwischen 0 und 1
+			red = clamp(red, 0.0, 1.0)
+			blue = clamp(blue, 0.0, 1.0)
+			acpi[row, column] = RGB(red, acpi_green_channel[row, column].g, blue)
+		end
+		# rotes hotpixel
+		for column in 4:2:width-2
+			# rekonstruieren des blaukanals
+			# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
+			# 1.1 diagonal negativer gradient (links unten nach rechts oben)
+			g_neg = abs(conv(acpi_green_channel[row-1, column-1].b) - conv(acpi_green_channel[row+1, column+1].b)) + abs(- conv(acpi_green_channel[row-1, column-1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column+1].g)))
+			# 1.2 diagonal positiver gradient (links oben nach rechts unten)
+			g_pos = abs(conv(acpi_green_channel[row-1, column+1].b) - conv(acpi_green_channel[row+1, column-1].b)) + abs(- conv(acpi_green_channel[row-1, column+1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column-1].g)))
+			
+			# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
+			if g_neg > g_pos # TODO: prüfen ob buch hier falsch liegt
+				blue = 0.5 * (conv(acpi_green_channel[row-1, column-1].b) + conv(acpi_green_channel[row+1, column+1].b)) 
+				blue += 0.25 * (- conv(acpi_green_channel[row-1, column-1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column+1].g)))
+			else
+				blue = 0.5 * (conv(acpi_green_channel[row-1, column+1].b) - conv(acpi_green_channel[row+1, column-1].b)) 
+				blue += 0.25*(- conv(acpi_green_channel[row-1, column+1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column-1].g)))
+			end
+
+			# nur noch werte zwischen 0 und 1 
+			blue = clamp(blue, 0.0, 1.0)
+			acpi[row, column] = RGB(acpi_green_channel[row, column].r, acpi_green_channel[row, column].g, blue)
+
+		end
+	end
+	
+	# geraden Bildzeilen
+	for row in 4:2:height-2
+		# blaues hotpixel
+		for column in 3:2:width-2
+			# rekonstruieren des blaukanals
+			# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
+			# 1.1 diagonal negativer gradient (links unten nach rechts oben)
+			g_neg = abs(conv(acpi_green_channel[row-1, column-1].r) - conv(acpi_green_channel[row+1, column+1].r)) + abs(- conv(acpi_green_channel[row-1, column-1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column+1].g)))
+			# 1.2 diagonal positiver gradient (links oben nach rechts unten)
+			g_pos = abs(conv(acpi_green_channel[row-1, column+1].r) - conv(acpi_green_channel[row+1, column-1].r)) + abs(- conv(acpi_green_channel[row-1, column+1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column-1].g)))
+			
+			# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
+			if g_neg > g_pos # TODO: prüfen ob buch hier falsch liegt
+				red = 0.5 * (conv(acpi_green_channel[row-1, column-1].r) + conv(acpi_green_channel[row+1, column+1].r)) 
+				red += 0.25 * (- conv(acpi_green_channel[row-1, column-1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column+1].g)))
+			else
+				red = 0.5 * (conv(acpi_green_channel[row-1, column+1].r) - conv(acpi_green_channel[row+1, column-1].r)) 
+				red += 0.25*(- conv(acpi_green_channel[row-1, column+1].g) + 2*conv(acpi_green_channel[row, column].g - conv(acpi_green_channel[row+1, column-1].g)))
+			end
+
+			# nur noch werte zwischen 0 und 1 
+			red = clamp(red, 0.0, 1.0)
+			acpi[row, column] = RGB(red, acpi_green_channel[row, column].g, acpi_green_channel[row, column].b)
+		end
+		
+		# grünes hotpixel
+		for column in 4:2:width-2
+			red = 0.5*(conv(acpi_green_channel[row-1, column].r) + conv(acpi_green_channel[row+1, column].r)) + 0.5 * (-conv(acpi_green_channel[row-1, column].g) + 2*conv(acpi_green_channel[row, column].g) - conv(acpi_green_channel[row+1, column].g))
+			blue = 0.5*(conv(acpi_green_channel[row, column-1].b) + conv(acpi_green_channel[row, column+1].b)) + 0.5 * (-conv(acpi_green_channel[row, column-1].g) + 2*conv(acpi_green_channel[row, column].g) - conv(acpi_green_channel[row, column+1].g))
+			
+			# nur noch werte zwischen 0 und 1
+			red = clamp(red, 0.0, 1.0)
+			blue = clamp(blue, 0.0, 1.0)
+			acpi[row, column] = RGB(red, acpi_green_channel[row, column].g, blue)
+		end
+	end
+	return acpi
+end
+
+# ╔═╡ bc8381e8-94ea-48a9-8897-61eb5826fae9
+function acpi(bayer_filter)
+	green_channel = acpi_green_channel(bayer_filter)
+	return acpi_red_green(green_channel)
+end
+
+# ╔═╡ 6b76b17f-0328-4b35-90ba-b149b61cb63c
+begin
+	acpi_luigi = acpi(bayer_luigi)
+	[bayer_luigi acpi_green_luigi acpi_luigi]
+end
 
 # ╔═╡ Cell order:
 # ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
@@ -301,3 +472,9 @@ luigi_hqlin = hqlin(bayer_luigi)
 # ╠═826b8cc7-e2fb-4217-9737-0fa7119dca8d
 # ╠═8db7f71e-0bcc-40c1-be67-7177b251ddae
 # ╠═2b67027a-77a0-40c0-9afc-f52da41d9b2b
+# ╠═d4e7a7f1-929c-4be7-943d-4267cedacfc2
+# ╠═48e4ae5d-5423-442c-9b4e-712f42b84bc2
+# ╠═c00ec842-85a5-4554-94ce-628f28d34b09
+# ╠═211756ce-1b62-491b-9914-a82cfdb663fa
+# ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
+# ╠═6b76b17f-0328-4b35-90ba-b149b61cb63c
