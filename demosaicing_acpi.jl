@@ -53,12 +53,32 @@ main {
 
 # ╔═╡ ef83b17c-b66c-4734-aebe-6a6d9390b914
 begin
-	function blue_bilin_interpol(row, column)
-		return (conv(bayer_filter[row-1, column-1].b) + conv(bayer_filter[row-1, column+1].b) + conv(bayer_filter[row+1, column+1].b) + conv(bayer_filter[row+1, column-1].b)) ÷ 4
+	function blue_bilin_interpol(bayer_filter, row, column)
+		return (conv(bayer_filter[row-1, column-1].b) + conv(bayer_filter[row-1, column+1].b) + conv(bayer_filter[row+1, column+1].b) + conv(bayer_filter[row+1, column-1].b)) / 4
 	end
 	
-	function green_bilin_interpol(row, column)
-		return (conv(bayer_filter[row, column-1].g) + conv(bayer_filter[row, column+1].g) + conv(bayer_filter[row-1, column].g) + conv(bayer_filter[row+1, column].g)) ÷ 4
+	function green_bilin_interpol(bayer_filter, row, column)
+		return (conv(bayer_filter[row, column-1].g) + conv(bayer_filter[row, column+1].g) + conv(bayer_filter[row-1, column].g) + conv(bayer_filter[row+1, column].g)) / 4
+	end
+	
+	function red_bilin_interpol(bayer_filter, row, column)
+		return (conv(bayer_filter[row-1, column-1].r) + conv(bayer_filter[row-1, column+1].r) + conv(bayer_filter[row+1, column+1].r) + conv(bayer_filter[row+1, column-1].r)) / 4
+	end
+	
+	function red_bilin_interpol_vertical(bayer_filter, row, column)
+		return (conv(bayer_filter[row-1, column].r) + conv(bayer_filter[row+1, column].r)) / 2
+	end
+	
+	function red_bilin_interpol_horizontal(bayer_filter, row, column)
+		return (conv(bayer_filter[row, column-1].r) + conv(bayer_filter[row, column+1].r)) / 2
+	end
+	
+	function blue_bilin_interpol_vertical(bayer_filter, row, column)
+		return (conv(bayer_filter[row-1, column].b) + conv(bayer_filter[row+1, column].b)) / 2
+	end
+	
+	function blue_bilin_interpol_horizontal(bayer_filter, row, column)
+		return (conv(bayer_filter[row, column-1].b) + conv(bayer_filter[row, column+1].b)) / 2
 	end
 end
 
@@ -103,16 +123,14 @@ function bilineare_interpolation(bayer_filter)
 	for image_row in 3:2:height-1
 		# grüner pixel
 		for image_column in 3:2:width-1
-			blue = (conv(bayer_filter[image_row-1, image_column].b) + conv(bayer_filter[image_row+1, image_column].b)) / 2
-			red = (conv(bayer_filter[image_row, image_column-1].r) + conv(bayer_filter[image_row, image_column+1].r)) / 2
+			blue = blue_bilin_interpol_vertical(bayer_filter, image_row, image_column)
+			red = red_bilin_interpol_horizontal(bayer_filter, image_row, image_column)
 			bilin_interpol[image_row, image_column] = RGB(red, bayer_filter[image_row, image_column].g, blue)			
 		end
 		# roter pixel
 		for image_column in 2:2:width-1
-			# todo ecken bekommen auslagern
-			#blue = (conv(bayer_filter[image_row-1, image_column-1].b) + conv(bayer_filter[image_row-1, image_column+1].b) + conv(bayer_filter[image_row+1, image_column+1].b) + conv(bayer_filter[image_row+1, image_column-1].b)) / 4
-			blue = blue_bilin_interpol(image_row, image_column)
-			green = (conv(bayer_filter[image_row, image_column-1].g) + conv(bayer_filter[image_row, image_column+1].g) + conv(bayer_filter[image_row-1, image_column].g) + conv(bayer_filter[image_row+1, image_column].g)) / 4
+			blue = blue_bilin_interpol(bayer_filter, image_row, image_column)
+			green = green_bilin_interpol(bayer_filter, image_row, image_column)
 			bilin_interpol[image_row, image_column] = RGB(bayer_filter[image_row, image_column].r, green, blue)
 		end
 	end
@@ -121,15 +139,14 @@ function bilineare_interpolation(bayer_filter)
 	for image_row in 2:2:height-1
 		# blauer pixel
 		for image_column in 3:2:width-1
-			red = (conv(bayer_filter[image_row-1, image_column-1].r) + conv(bayer_filter[image_row-1, image_column+1].r) + conv(bayer_filter[image_row+1, image_column+1].r) + conv(bayer_filter[image_row+1, image_column-1].r)) / 4
-			
-			green = (conv(bayer_filter[image_row, image_column-1].g) + conv(bayer_filter[image_row, image_column+1].g) + conv(bayer_filter[image_row-1, image_column].g) + conv(bayer_filter[image_row+1, image_column].g)) / 4
+			red = red_bilin_interpol(bayer_filter, image_row, image_column)
+			green = green_bilin_interpol(bayer_filter, image_row, image_column)
 			bilin_interpol[image_row, image_column] = RGB(red, green, bayer_filter[image_row, image_column].b)
 		end
 		# grüner pixel
 		for image_column in 2:2:width-1
-			blue = (conv(bayer_filter[image_row, image_column-1].b) + conv(bayer_filter[image_row, image_column+1].b)) / 2
-			red = (conv(bayer_filter[image_row-1, image_column].r) + conv(bayer_filter[image_row+1, image_column].r)) / 2
+			blue = blue_bilin_interpol_horizontal(bayer_filter, image_row, image_column)
+			red = red_bilin_interpol_vertical(bayer_filter, image_row, image_column)
 			bilin_interpol[image_row, image_column] = RGB(red, bayer_filter[image_row, image_column].g, blue)
 		end
 	end
@@ -172,7 +189,7 @@ hcat(luigi, bayer_luigi,luigi_bilineare_interpolation)
 
 # ╔═╡ b89fb2e2-a3cd-44e7-942a-b09c51deee18
 begin
-	bi_lin_head = head(luigi_bilineare_interpolation, 5)
+	bi_lin_head = head(luigi_bilineare_interpolation, 2)
 	[luigis_head bi_lin_head]
 end
 
@@ -181,33 +198,78 @@ function hqlin(bayer_filter)
 	hqlin = copy(bayer_filter)
 	(height, width) = size(bayer_filter)
 	# Bildzeilen, in denen nur grüne und rote hotpixel sind
-	for image_row in 3:2:height-2
+	for row in 3:2:height-2
 		# grünes hotpixel
-		for image_column in 3:2:width-2
-			
+		for column in 3:2:width-2
+			# 1. rotwert bestimmen
+			# 1.1 bilineare interpolation
+			red = red_bilin_interpol_horizontal(bayer_filter, row, column)
+			# 1.2 Laplace-Anteil addieren
+			red += (5*conv(bayer_filter[row, column].g) - conv(bayer_filter[row, column-2].g) - conv(bayer_filter[row, column+2].g) - conv(bayer_filter[row-1, column-1].g) - conv(bayer_filter[row+1, column+1].g) - conv(bayer_filter[row+1, column-1].g) - conv(bayer_filter[row-1, column+1].g) + 0.5 * conv(bayer_filter[row-2, column].g) + conv(bayer_filter[row+2, column].g)) / 8
+			# 1. blauwert bestimmen
+			# 1.1 bilineare interpolation
+			blue = blue_bilin_interpol_vertical(bayer_filter, row, column)
+			# 1.2 Laplace-Anteil addieren
+			blue += (5*conv(bayer_filter[row, column].g) - conv(bayer_filter[row-2, column].g) - conv(bayer_filter[row+2, column].g) - conv(bayer_filter[row-1, column-1].g) - conv(bayer_filter[row+1, column+1].g) - conv(bayer_filter[row+1, column-1].g) - conv(bayer_filter[row-1, column+1].g) + 0.5 * conv(bayer_filter[row, column-2].g) + conv(bayer_filter[row, column+2].g)) / 8
+			# werte zwischen 0 und 1 beschränken
+			red = clamp(red, 0.0, 1.0)
+			blue = clamp(blue, 0.0, 1.0)
+			hqlin[row, column] = RGB(red, bayer_filter[row, column].g, blue)
 		end
 		# rotes hotpixel
-		for image_column in 2:2:width-2
+		for column in 4:2:width-2
 			# 1. blauwerte bestimmen
 			# 1.1 bilineare interpolation
-			blue = blue_bilin_interpol(image_row, image_column)
-			
-			
+			blue = blue_bilin_interpol(bayer_filter, row, column)
+			# 1.2 Laplace-Anteil addieren
+			blue += 1.5*(4*conv(bayer_filter[row, column].r) - conv(bayer_filter[row-2, column].r) - conv(bayer_filter[row, column-2].r) - conv(bayer_filter[row+2, column].r) - conv(bayer_filter[row, column+2].r)) / 8
 			# 2 grünwerte bestimmen
 			# 2.1 bilineare interpolation
-			green = green_bilin_interpol(image_row, image_column)
+			green = green_bilin_interpol(bayer_filter, row, column)
+			# 2.2 Laplace-Anteil addieren
+			green += (4*conv(bayer_filter[row, column].r) - conv(bayer_filter[row-2, column].r) - conv(bayer_filter[row, column-2].r) - conv(bayer_filter[row+2, column].r) - conv(bayer_filter[row, column+2].r)) / 8
+			# werte nur noch zwischen 0 und 1
+			green = clamp(green, 0.0, 1.0)
+			blue = clamp(blue, 0.0, 1.0)
+			hqlin[row, column] = RGB(bayer_filter[row, column].r, green, blue)
 		end
 	end
 	
 	# geraden Bildzeilen
-	for image_row in 4:2:height-2
+	for row in 4:2:height-2
 		# blaues hotpixel
-		for image_column in 3:2:width-2
+		for column in 3:2:width-2
+			# 1. rotwerte bestimmen
+			# 1.1 bilineare interpolation
+			red = red_bilin_interpol(bayer_filter, row, column)
+			# 1.2 Laplace-Anteil addieren
+			red += 1.5*(4*conv(bayer_filter[row, column].b) - conv(bayer_filter[row-2, column].b) - conv(bayer_filter[row, column-2].b) - conv(bayer_filter[row+2, column].b) - conv(bayer_filter[row, column+2].b)) / 8
+			# 2 grünwerte bestimmen
+			# 2.1 bilineare interpolation
+			green = green_bilin_interpol(bayer_filter, row, column)
+			# 2.2 Laplace-Anteil addieren
+			green += (4*conv(bayer_filter[row, column].b) - conv(bayer_filter[row-2, column].b) - conv(bayer_filter[row, column-2].b) - conv(bayer_filter[row+2, column].b) - conv(bayer_filter[row, column+2].b)) / 8
 			
+			green = clamp(green, 0.0, 1.0)
+			red = clamp(red, 0.0, 1.0)
+			hqlin[row, column] = RGB(red, green, bayer_filter[row, column].b)
 		end
 		# grünes hotpixel
-		for image_column in 4:2:width-2
-			
+		for column in 4:2:width-2
+			# 1. rotwert bestimmen
+			# 1.1 bilineare interpolation
+			red = red_bilin_interpol_vertical(bayer_filter, row, column)
+			# 1.2 Laplace-Anteil addieren
+			red += (5*conv(bayer_filter[row, column].g) - conv(bayer_filter[row-2, column].g) - conv(bayer_filter[row+2, column].g) - conv(bayer_filter[row-1, column-1].g) - conv(bayer_filter[row+1, column+1].g) - conv(bayer_filter[row+1, column-1].g) - conv(bayer_filter[row-1, column+1].g) + 0.5 * conv(bayer_filter[row, column-2].g) + conv(bayer_filter[row-2, column+2].g)) / 8
+			# 1. blauwert bestimmen
+			# 1.1 bilineare interpolation
+			blue = blue_bilin_interpol_horizontal(bayer_filter, row, column)
+			# 1.2 Laplace-Anteil addieren
+			blue += (5*conv(bayer_filter[row, column].g) - conv(bayer_filter[row, column-2].g) - conv(bayer_filter[row, column+2].g) - conv(bayer_filter[row-1, column-1].g) - conv(bayer_filter[row+1, column+1].g) - conv(bayer_filter[row+1, column-1].g) - conv(bayer_filter[row-1, column+1].g) + 0.5 * conv(bayer_filter[row-2, column].g) + conv(bayer_filter[row+2, column].g)) / 8
+			# werte zwischen 0 und 1 beschränken
+			red = clamp(red, 0.0, 1.0)
+			blue = clamp(blue, 0.0, 1.0)
+			hqlin[row, column] = RGB(red, bayer_filter[row, column].g, blue)
 		end
 	end
 	
@@ -215,7 +277,10 @@ function hqlin(bayer_filter)
 end
 
 # ╔═╡ 8db7f71e-0bcc-40c1-be67-7177b251ddae
+luigi_hqlin = hqlin(bayer_luigi)
 
+# ╔═╡ 2b67027a-77a0-40c0-9afc-f52da41d9b2b
+[luigi luigi_bilineare_interpolation luigi_hqlin]
 
 # ╔═╡ Cell order:
 # ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
@@ -235,3 +300,4 @@ end
 # ╠═b89fb2e2-a3cd-44e7-942a-b09c51deee18
 # ╠═826b8cc7-e2fb-4217-9737-0fa7119dca8d
 # ╠═8db7f71e-0bcc-40c1-be67-7177b251ddae
+# ╠═2b67027a-77a0-40c0-9afc-f52da41d9b2b
