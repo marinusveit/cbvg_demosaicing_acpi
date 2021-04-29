@@ -11,10 +11,10 @@ begin
 	using Pkg
 	Pkg.add("PlutoUI")
 	Pkg.add("Images")
-	# Pkg.add("TestImages")
+	Pkg.add("TestImages")
 	Pkg.add("ImageTransformations")
 	using ImageTransformations
-	# using TestImages
+	using TestImages
 	using Images
 	using PlutoUI
 end
@@ -52,12 +52,14 @@ main {
 """
 
 # ╔═╡ ef83b17c-b66c-4734-aebe-6a6d9390b914
-function blue_bilin_interpol(row, column)
-	return (conv(bayer_filter[row-1, column-1].b) + conv(bayer_filter[row-1, column+1].b) + conv(bayer_filter[row+1, column+1].b) + conv(bayer_filter[row+1, column-1].b)) ÷ 4
-end
-
-function green_bilin_interpol(row, column)
-	return (conv(bayer_filter[row, column-1].g) + conv(bayer_filter[row, column+1].g) + conv(bayer_filter[row-1, column].g) + conv(bayer_filter[row+1, column].g)) ÷ 4
+begin
+	function blue_bilin_interpol(row, column)
+		return (conv(bayer_filter[row-1, column-1].b) + conv(bayer_filter[row-1, column+1].b) + conv(bayer_filter[row+1, column+1].b) + conv(bayer_filter[row+1, column-1].b)) ÷ 4
+	end
+	
+	function green_bilin_interpol(row, column)
+		return (conv(bayer_filter[row, column-1].g) + conv(bayer_filter[row, column+1].g) + conv(bayer_filter[row-1, column].g) + conv(bayer_filter[row+1, column].g)) ÷ 4
+	end
 end
 
 # ╔═╡ 39502556-161a-4efc-864b-fcf1755db8a4
@@ -151,8 +153,8 @@ bayer_luigi = bayer_colorfilter(luigi)
 
 # ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
 begin
-	luigis_head = head(luigi, 0)
-	luigi_b_head = head(bayer_luigi, 0)
+	luigis_head = head(luigi, 2)
+	luigi_b_head = head(bayer_luigi, 2)
 	[luigis_head luigi_b_head]
 end
 
