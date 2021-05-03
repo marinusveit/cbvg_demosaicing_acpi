@@ -20,7 +20,10 @@ begin
 end
 
 # ╔═╡ ffc27f40-1132-494f-87db-b1a7d0e0bf98
-
+#Was man erklaeren sollte:
+#Hotpixel
+#Hilfsfunktionen funktionsweise -> summieren grauwerte bestimmter pixel eines bestimmten kanals
+#...
 
 # ╔═╡ 5f647aac-e087-482a-af80-733fb387b73d
 begin
@@ -258,6 +261,13 @@ begin
 	download(url, "pixel_luigi.jpg")
 end
 
+# ╔═╡ 73d36b18-934a-4470-b195-1dbcd81e7be8
+begin 
+	url_pyramids = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/All_Gizah_Pyramids-2.jpg/1280px-All_Gizah_Pyramids-2.jpg"
+	download(url_pyramids, "pyramids.jpg")
+	pyramids = load("pyramids.jpg")
+end
+
 # ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
 begin
 	luigi = load("pixel_luigi.jpg")
@@ -394,7 +404,7 @@ end
 
 
 # ╔═╡ 48e4ae5d-5423-442c-9b4e-712f42b84bc2
-function acpi_green_channel(bayer_filter)
+function acpi_reconstruct_green_channel(bayer_filter)
 	acpi_green_channel = copy(bayer_filter)
 
 	# rotes hotpixel
@@ -456,13 +466,12 @@ end
 
 # ╔═╡ c00ec842-85a5-4554-94ce-628f28d34b09
 begin
-	acpi_green_luigi = acpi_green_channel(bayer_luigi)
+	acpi_green_luigi = acpi_reconstruct_green_channel(bayer_luigi)
 	[bayer_luigi acpi_green_luigi]
 end
 
 # ╔═╡ 211756ce-1b62-491b-9914-a82cfdb663fa
-# warum dieser name '.._red_..(acpi_green_channel)'??
-function acpi_red_green(acpi_green_channel, bayer_filter)
+function acpi_reconstruct_red_blue_channel(acpi_green_channel, bayer_filter)
 	acpi = copy(acpi_green_channel)
 	(height, width) = size(acpi_green_channel)
 
@@ -538,8 +547,8 @@ end
 
 # ╔═╡ bc8381e8-94ea-48a9-8897-61eb5826fae9
 function acpi(bayer_filter)
-	green_channel = acpi_green_channel(bayer_filter)
-	return acpi_red_green(green_channel, bayer_filter)
+	green_channel = acpi_reconstruct_green_channel(bayer_filter)
+	return acpi_reconstruct_red_blue_channel(green_channel, bayer_filter)
 end
 
 # ╔═╡ 6b76b17f-0328-4b35-90ba-b149b61cb63c
@@ -552,6 +561,15 @@ end
 # ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
  [luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi]
 
+# ╔═╡ 380b2cda-50e5-4bca-b1a9-1f1635deddfd
+bayer_pyramids = bayer_colorfilter(pyramids)
+
+# ╔═╡ 4b2cc49f-0a5c-407c-b545-b6692196deff
+acpi_pyramids = acpi(bayer_pyramids)
+
+# ╔═╡ 16bba682-6570-43d9-8da1-2a4be8810c67
+[pyramids bilineare_interpolation(bayer_pyramids) hqlin(bayer_pyramids) acpi_pyramids]
+
 # ╔═╡ Cell order:
 # ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╠═ffc27f40-1132-494f-87db-b1a7d0e0bf98
@@ -562,6 +580,7 @@ end
 # ╠═39502556-161a-4efc-864b-fcf1755db8a4
 # ╠═c9f06538-02ec-4dd5-a915-0140741b041f
 # ╠═92c26370-a774-11eb-163a-3b4671b8c14b
+# ╠═73d36b18-934a-4470-b195-1dbcd81e7be8
 # ╠═a136aaaf-d467-40fa-8fff-ad9817148e6c
 # ╠═e5530339-75e8-4441-9e7a-0f9356c217da
 # ╠═1be3ace0-de06-4bd1-9d31-baaa9b154b18
@@ -580,3 +599,6 @@ end
 # ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
 # ╠═6b76b17f-0328-4b35-90ba-b149b61cb63c
 # ╠═0df3e1b9-dab5-4087-b5ba-c89f67f67380
+# ╠═380b2cda-50e5-4bca-b1a9-1f1635deddfd
+# ╠═4b2cc49f-0a5c-407c-b545-b6692196deff
+# ╠═16bba682-6570-43d9-8da1-2a4be8810c67
