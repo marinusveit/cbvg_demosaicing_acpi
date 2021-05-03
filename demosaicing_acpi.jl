@@ -21,25 +21,12 @@ end
 
 # ╔═╡ 5f647aac-e087-482a-af80-733fb387b73d
 begin
-	
-	#    top_left 	top  				top_right
-	# 	 left 		referenzpixel Pixel	right 	
-	# 	 bottom_left bottom 			bottom_right
+	#								toptop
+	#    			top_left 	 	top  			top_right
+	# 	 left left 	left 		 	referenz Pixel  right 			rightright
+	# 	 			bottom_left 	bottom 			bottom_right
+	#								bottombottom
 	#
-	#
-#	top_left = (1, -1) # z. B. ein zeile und ein spalte vor dem pixel das man betrachtet
-#	top = (+1, 0)
-#	top_right = (1, 1)
-#	left = (0, -1)
-#	current = (0, 0)
-#	right = (0, 1)
-#	bottom_left = (-1, -1)
-#	bottom = (-1, 0)
-#	bottom_right = (-1, 1)
-#	left_left = (0, -2)
-#	top_top = (2, 0)
-#	bottom_bottom = (-2, 0)
-#	right_right = (0, 2)
 	top_left = (-1, -1) # z. B. ein zeile und ein spalte vor dem pixel das man betrachtet
 	top = (-1, 0)
 	top_right = (-1, 1)
@@ -64,10 +51,7 @@ begin
 	function blue_value(color)
 		return RGB(0, 0, color.b)
 	end
-	# convertiert N0fb zu Float32
-	function conv(n0fb)
-		return convert(Float32, n0fb)
-	end
+
 	# funktion die den Kopf von Luigi extrahiert
 	function head(image, resize)
 		(height, width) = size(image)
@@ -139,20 +123,10 @@ begin
 
 end
 
-# ╔═╡ 3c795e2c-b078-485b-b579-8fe3c0e22db0
-begin
-	typeof((1,1))
-	RGB(0,0,0).b
-	typeof(0.0)
-	a = (1, 1)
-	a[1]
-	((1,2),3)[2][1]
-end
-
 # ╔═╡ bfa6f004-e3ab-4363-ab76-b14de80b272a
 html"""<style>
 main {
-    max-width: 1200px;
+    max-width: 900px;
 }
 """
 
@@ -290,9 +264,6 @@ end
 begin
 	bayer_luigi = bayer_colorfilter(luigi)
 end
-
-# ╔═╡ 02474a45-4503-4186-a29b-44a24fd112fd
-sum_green_channel(bayer_luigi, (3, 2),  (bottom, -2.5), (bottom, 5))
 
 # ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
 begin
@@ -463,7 +434,7 @@ function acpi_green_channel(bayer_filter)
 		green = 0
 		if g_vertical > g_horizontal
 			# horizontale bilineare interpolation
-			green = 0.5 * sum_green_channel(bayer_filter, (row, column), (left, 1), (right, -1))
+			green = 0.5 * sum_green_channel(bayer_filter, (row, column), left, right)
 			# horizontalen Laplace Anteil addieren
 			green += 0.25 * sum_blue_channel(bayer_filter, (row, column), (left_left, -1), (current, 2), (right_right, -1))
 		else
@@ -513,12 +484,12 @@ function acpi_red_green(acpi_green_channel, bayer_filter)
 		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
 		# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
-		if g_neg > g_pos # TODO: prüfen ob buch hier falsch liegt
-			blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), (top_left, -1), (bottom_right, -1))
+		if g_neg < g_pos # TODO: prüfen ob buch hier falsch liegt
+			blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), top_left, bottom_right)
 			blue += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1))
 		else
-			blue = sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))
-			blue += sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1))
+			blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), top_right, bottom_left)
+			blue += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1))
 		end
 			# nur noch werte zwischen 0 und 1 
 		blue = clamp(blue, 0.0, 1.0)
@@ -537,12 +508,12 @@ function acpi_red_green(acpi_green_channel, bayer_filter)
 		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
 		# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
-		if g_neg > g_pos # TODO: prüfen ob buch hier falsch liegt
-			red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), (top_left, -1), (bottom_right, -1))
+		if g_neg < g_pos # TODO: prüfen ob buch hier falsch liegt
+			red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), top_left, bottom_right)
 			red += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1))
 		else
-			red = sum_red_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))
-			red += sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1))
+			red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), top_right, bottom_left)
+			red += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1))
 		end
 		# nur noch werte zwischen 0 und 1 
 		red = clamp(red, 0.0, 1.0)
@@ -575,11 +546,12 @@ begin
 	imresize(tmp, ratio=5)
 end
 
+# ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
+ [luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi]
+
 # ╔═╡ Cell order:
 # ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╠═5f647aac-e087-482a-af80-733fb387b73d
-# ╠═3c795e2c-b078-485b-b579-8fe3c0e22db0
-# ╠═02474a45-4503-4186-a29b-44a24fd112fd
 # ╠═bfa6f004-e3ab-4363-ab76-b14de80b272a
 # ╠═ef83b17c-b66c-4734-aebe-6a6d9390b914
 # ╠═429b0bc0-4e24-48b6-807d-08bb5f39aae2
@@ -603,3 +575,4 @@ end
 # ╠═211756ce-1b62-491b-9914-a82cfdb663fa
 # ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
 # ╠═6b76b17f-0328-4b35-90ba-b149b61cb63c
+# ╠═0df3e1b9-dab5-4087-b5ba-c89f67f67380
