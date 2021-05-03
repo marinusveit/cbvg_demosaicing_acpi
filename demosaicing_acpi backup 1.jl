@@ -19,6 +19,11 @@ begin
 	using PlutoUI
 end
 
+# ╔═╡ ffc27f40-1132-494f-87db-b1a7d0e0bf98
+#Was man erklaeren sollte:
+#Hotpixel
+#Hilfsfunktionen funktionsweise -> summieren grauwerte bestimmter pixel eines bestimmten kanals
+#...
 
 # ╔═╡ 5f647aac-e087-482a-af80-733fb387b73d
 begin
