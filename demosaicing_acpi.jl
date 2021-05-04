@@ -32,11 +32,11 @@ md"# Präsentation zum Thema Demosaicing
 ## Am Beispiel des Algorithmus ACPI ”Adaptive Color Plane Interpolation“ von Hamilton & Adams
 
 
-#### von Felix Schnitzenbaumer, Marinus Veit, Simon Schröppel und Thorsten Schartel
+##### von Felix Schnitzenbaumer, Marinus Veit, Simon Schröppel und Thorsten Schartel
 
 
 
-Präsentation als Pluto Notebook (link)"
+Präsentation als Pluto Notebook (**https://github.com/marinusveit/cbvg\_demosaicing\_acpi**)"
 
 
 # ╔═╡ 8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
@@ -318,43 +318,6 @@ function bayer_colorfilter(image)
 	return bayer_filter
 end
 
-# ╔═╡ c9f06538-02ec-4dd5-a915-0140741b041f
-# ohne randbetrachtung (randpixel bleiben noch unverändert)
-function bilineare_interpolation(bayer_filter)
-	(height, width) = size(bayer_filter)
-	bilin_interpol = copy(bayer_filter)
-	
-	# ungerade Bildzeilen
-	# grüner hotpixel 
-	for (row, column) in green_red_hotpixels(bayer_filter)
-		blue = blue_bilin_interpol_vertical(bayer_filter, row, column)
-		red = red_bilin_interpol_horizontal(bayer_filter, row, column)
-		bilin_interpol[row, column] = RGB(red, bayer_filter[row, column].g, blue)			
-	end
-	
-	# roter pixel
-	for (row, column) in redhotpixels(bayer_filter)
-		blue = blue_bilin_interpol(bayer_filter, row, column)
-		green = green_bilin_interpol(bayer_filter, row, column)
-		bilin_interpol[row, column] = RGB(bayer_filter[row, column].r, green, blue)
-	end
-	
-	# gerade Bildzeilen
-	# blauer pixel
-	for (row, column) in bluehotpixels(bayer_filter)
-		red = red_bilin_interpol(bayer_filter, row, column)
-		green = green_bilin_interpol(bayer_filter, row, column)
-		bilin_interpol[row, column] = RGB(red, green, bayer_filter[row, column].b)
-	end
-	# grüner pixel
-	for (row, column) in green_blue_hotpixels(bayer_filter)
-		blue = blue_bilin_interpol_horizontal(bayer_filter, row, column)
-		red = red_bilin_interpol_vertical(bayer_filter, row, column)
-		bilin_interpol[row, column] = RGB(red, bayer_filter[row, column].g, blue)
-	end
-	return bilin_interpol
-end
-
 # ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
 begin
 	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
@@ -399,6 +362,43 @@ end
 
 # ╔═╡ c1e450f0-862a-4ec9-aae0-0a64fd660d19
 md"### Bilineare Interpolation"
+
+# ╔═╡ c9f06538-02ec-4dd5-a915-0140741b041f
+# ohne randbetrachtung (randpixel bleiben noch unverändert)
+function bilineare_interpolation(bayer_filter)
+	(height, width) = size(bayer_filter)
+	bilin_interpol = copy(bayer_filter)
+	
+	# ungerade Bildzeilen
+	# grüner hotpixel 
+	for (row, column) in green_red_hotpixels(bayer_filter)
+		blue = blue_bilin_interpol_vertical(bayer_filter, row, column)
+		red = red_bilin_interpol_horizontal(bayer_filter, row, column)
+		bilin_interpol[row, column] = RGB(red, bayer_filter[row, column].g, blue)			
+	end
+	
+	# roter pixel
+	for (row, column) in redhotpixels(bayer_filter)
+		blue = blue_bilin_interpol(bayer_filter, row, column)
+		green = green_bilin_interpol(bayer_filter, row, column)
+		bilin_interpol[row, column] = RGB(bayer_filter[row, column].r, green, blue)
+	end
+	
+	# gerade Bildzeilen
+	# blauer pixel
+	for (row, column) in bluehotpixels(bayer_filter)
+		red = red_bilin_interpol(bayer_filter, row, column)
+		green = green_bilin_interpol(bayer_filter, row, column)
+		bilin_interpol[row, column] = RGB(red, green, bayer_filter[row, column].b)
+	end
+	# grüner pixel
+	for (row, column) in green_blue_hotpixels(bayer_filter)
+		blue = blue_bilin_interpol_horizontal(bayer_filter, row, column)
+		red = red_bilin_interpol_vertical(bayer_filter, row, column)
+		bilin_interpol[row, column] = RGB(red, bayer_filter[row, column].g, blue)
+	end
+	return bilin_interpol
+end
 
 # ╔═╡ 1746ff45-7bae-4033-bec9-477ecfb47bd5
 luigi_bilineare_interpolation = bilineare_interpolation(bayer_luigi)
@@ -843,7 +843,7 @@ Pro:
 - Dadurch klareres Bild
 
 Contra:
-- Auch wird der Rechenaufwand verdoppelt, da für jeden Farbwert erst die Gradienten berechnet werden müssen
+- Der Rechenaufwand wird verdoppelt, da für jeden Farbwert erst die zwei Gradienten berechnet werden müssen
 - Reihenfolge der Farbwertberechnung entscheidend (Grün -> Rot / Blau)
 
 
