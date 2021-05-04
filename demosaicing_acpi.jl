@@ -667,6 +667,26 @@ acpi_pyramids = acpi(bayer_pyramids)
 # ╔═╡ be401b81-ea80-4a24-9d33-36f4b8153945
 [acpi_pyramids acpi_improved(bayer_pyramids)]
 
+# ╔═╡ 955c3038-6203-43c3-b453-0e483725ae9b
+function mean_square_error(original, reconstructed)
+	if size(original) != size(reconstructed)
+		return -1
+	end
+	(height, width) = size(original)
+	total_sq_err = 0.0
+	
+	for (row, column) in size(original)
+		total_sq_err += square(original[row, column].r - reconstructed[row, column].r)
+		total_sq_err += square(original[row, column].g - reconstructed[row, column].g)
+		total_sq_err += square(original[row, column].b - reconstructed[row, column].b)
+	end
+	
+	return total_sq_err/(height * width)
+end
+
+# ╔═╡ 35ac183c-de60-4583-b953-a6a7da999eca
+mean_square_error(luigi, bayer_luigi)
+
 # ╔═╡ Cell order:
 # ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╠═5f647aac-e087-482a-af80-733fb387b73d
@@ -702,3 +722,5 @@ acpi_pyramids = acpi(bayer_pyramids)
 # ╠═4b2cc49f-0a5c-407c-b545-b6692196deff
 # ╠═16bba682-6570-43d9-8da1-2a4be8810c67
 # ╠═be401b81-ea80-4a24-9d33-36f4b8153945
+# ╠═955c3038-6203-43c3-b453-0e483725ae9b
+# ╠═35ac183c-de60-4583-b953-a6a7da999eca
