@@ -25,6 +25,78 @@ end
 #Hilfsfunktionen funktionsweise -> summieren grauwerte bestimmter pixel eines bestimmten kanals
 #...
 
+# ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
+begin
+	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
+
+	download(url, "pixel_luigi.jpg")
+end
+
+# ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
+begin
+	luigi = load("pixel_luigi.jpg")
+end
+
+# ╔═╡ 3336008c-8849-4bed-82e2-635deb6a802e
+
+
+# ╔═╡ 8a7db685-811e-49b4-8e5b-3cb7e56e9e1b
+
+
+# ╔═╡ ea440279-4805-422a-8f12-ab9cd1b83f40
+
+
+# ╔═╡ 4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
+md"# Genauer Ablauf des Algorithmus anhand praktischer Beispiele:
+
+- Erster Schritt: Rekonstruktion aller Grünwerte der roten- und blauen Hotpixel
+
+	(Bild gradient horizontal/vertikal)
+
+- Als erstes Berechnung aller Grünwert-Gradienten der roten und blauen Pixel in horizontaler und vertikaler Richtung nach folgender Formel:
+
+ 	(Formeln)
+
+- Je nachdem welcher Gradient der größere ist, wird eine der beiden folgenden Formeln zur Rekonstruktion des Grünkanals des betrachteten Pixels verwendet.
+
+	(Formeln)
+
+- Der linke Teil des Terms entspricht dabei der bilinearen Interpolation der zweite der einem 1-dimensionalen Laplace-Filter.
+
+- **Wichtig** wenn wir den höheren Gradienten auf der horizontalen berechnen verwenden wir für den Grünkanal die vertikale Achse und umgekehrt. Dies vermeidet das bereits genannte Zipper-Problem und erhält die Kanten des Originalbildes. 
+
+- Somit haben wir jetzt für alle roten und blauen Hotixel Grünwerte berechnet.
+
+- Im folgenden Schritt werden die noch fehlenden Farbwerte der einzelnen Pixel anhand der berechnete Grünwerte berechnet. D.h. uns fehlen noch folgende Werte:
+
+	-	rote Pixel -> Blauwert
+	-	blaue Pixel -> Rotwert
+	-	grüne Pixel -> Rot- und Blauwert
+
+- Für die Berechnung der roten Pixel wird mithilfe der im vorherigen Schritt erhaltenen Grünwerte der diagonale Gradient nach folgender Formel berechnet. Die blauen Hotpixel werden analog rekonstruiert.
+
+	(Bild)
+
+	(Formel)
+
+	(Formel)
+
+- Für die Berechnung der fehlenden Farbwerte der grünen Pixel wird kein Gradient verwendet, da an diesen Stellen die Interpolation nur in eine Richtung möglich ist. 
+
+	(Bild)
+	(Formel)
+
+- Für jeden Pixel sind nun RGB Werte vorhanden
+
+- Dieser Algorithmus bietet noch Verbesserunspotenzial
+
+- Um die Farbwerte grüner Pixel bestimmen zu können müssen in diesem Fall erst alle Rotwerte Blauer Pixel und alle Blauwerte roter Pixel berechnet werden.
+
+	(Formeln)
+"
+
+
+
 # ╔═╡ 5f647aac-e087-482a-af80-733fb387b73d
 begin
 	#								toptop
@@ -217,6 +289,14 @@ function bayer_colorfilter(image)
 	return bayer_filter
 end
 
+# ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
+begin
+	bayer_luigi = bayer_colorfilter(luigi)
+end
+
+# ╔═╡ d1350a2a-e4b9-4767-8b6a-89caeb04bc2b
+hcat(luigi, bayer_luigi)
+
 # ╔═╡ c9f06538-02ec-4dd5-a915-0140741b041f
 # ohne randbetrachtung (randpixel bleiben noch unverändert)
 function bilineare_interpolation(bayer_filter)
@@ -254,28 +334,11 @@ function bilineare_interpolation(bayer_filter)
 	return bilin_interpol
 end
 
-# ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
-begin
-	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
-
-	download(url, "pixel_luigi.jpg")
-end
-
 # ╔═╡ 73d36b18-934a-4470-b195-1dbcd81e7be8
 begin 
 	url_pyramids = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/All_Gizah_Pyramids-2.jpg/1280px-All_Gizah_Pyramids-2.jpg"
 	download(url_pyramids, "pyramids.jpg")
 	pyramids = load("pyramids.jpg")
-end
-
-# ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
-begin
-	luigi = load("pixel_luigi.jpg")
-end
-
-# ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
-begin
-	bayer_luigi = bayer_colorfilter(luigi)
 end
 
 # ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
@@ -658,7 +721,7 @@ end
  [luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi]
 
 # ╔═╡ 8252df35-e34d-4b2a-b486-5da09ece671f
-[acpi_luigi acpi_improved(bayer_luigi)]
+[luigi bayer_luigi acpi_improved(bayer_luigi)]
 
 # ╔═╡ 380b2cda-50e5-4bca-b1a9-1f1635deddfd
 bayer_pyramids = bayer_colorfilter(pyramids)
@@ -692,19 +755,38 @@ end
 # ╔═╡ 35ac183c-de60-4583-b953-a6a7da999eca
 mean_square_error(luigi, bayer_luigi)
 
+# ╔═╡ 75b637cb-30ec-40a6-9234-39e812ed96b4
+md"# Zusammenfassung
+
+Pro:
+- Deutlich reduzierter Zipper Effekt im Vergleich zu den vorangegangenen Algorithmen
+- Dadurch klareres Bild
+
+Contra:
+- Auch wird der Rechenaufwand verdoppelt, da für jeden Farbwert erst die Gradienten berechnet werden müssen
+- Reihenfolge der Farbwertberechnung entscheidend (Grün -> Rot / Blau)
+
+
+"
+
 # ╔═╡ Cell order:
 # ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
-# ╠═ffc27f40-1132-494f-87db-b1a7d0e0bf98
-# ╠═5f647aac-e087-482a-af80-733fb387b73d
-# ╠═bfa6f004-e3ab-4363-ab76-b14de80b272a
-# ╠═ef83b17c-b66c-4734-aebe-6a6d9390b914
-# ╠═429b0bc0-4e24-48b6-807d-08bb5f39aae2
-# ╠═39502556-161a-4efc-864b-fcf1755db8a4
-# ╠═c9f06538-02ec-4dd5-a915-0140741b041f
-# ╠═92c26370-a774-11eb-163a-3b4671b8c14b
+# ╟─ffc27f40-1132-494f-87db-b1a7d0e0bf98
+# ╟─92c26370-a774-11eb-163a-3b4671b8c14b
+# ╟─a136aaaf-d467-40fa-8fff-ad9817148e6c
+# ╟─e5530339-75e8-4441-9e7a-0f9356c217da
+# ╠═3336008c-8849-4bed-82e2-635deb6a802e
+# ╠═8a7db685-811e-49b4-8e5b-3cb7e56e9e1b
+# ╠═ea440279-4805-422a-8f12-ab9cd1b83f40
+# ╠═d1350a2a-e4b9-4767-8b6a-89caeb04bc2b
+# ╠═4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
+# ╟─5f647aac-e087-482a-af80-733fb387b73d
+# ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
+# ╟─ef83b17c-b66c-4734-aebe-6a6d9390b914
+# ╟─429b0bc0-4e24-48b6-807d-08bb5f39aae2
+# ╟─39502556-161a-4efc-864b-fcf1755db8a4
+# ╟─c9f06538-02ec-4dd5-a915-0140741b041f
 # ╠═73d36b18-934a-4470-b195-1dbcd81e7be8
-# ╠═a136aaaf-d467-40fa-8fff-ad9817148e6c
-# ╠═e5530339-75e8-4441-9e7a-0f9356c217da
 # ╠═1be3ace0-de06-4bd1-9d31-baaa9b154b18
 # ╠═8c1b7413-9b9e-44d0-9701-ade1fd3de536
 # ╠═1746ff45-7bae-4033-bec9-477ecfb47bd5
@@ -730,3 +812,4 @@ mean_square_error(luigi, bayer_luigi)
 # ╠═be401b81-ea80-4a24-9d33-36f4b8153945
 # ╠═955c3038-6203-43c3-b453-0e483725ae9b
 # ╠═35ac183c-de60-4583-b953-a6a7da999eca
+# ╠═75b637cb-30ec-40a6-9234-39e812ed96b4
