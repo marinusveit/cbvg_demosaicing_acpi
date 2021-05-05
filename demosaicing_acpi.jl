@@ -20,6 +20,114 @@ begin
 end
 
 
+# ╔═╡ 50b5fd6d-f293-4824-a5f4-ee9def287be3
+md"# Präsentation zum Thema Demosaicing
+
+
+## Am Beispiel des Algorithmus ACPI ”Adaptive Color Plane Interpolation“ von Hamilton & Adams
+
+
+##### von Felix Schnitzenbaumer, Marinus Veit, Simon Schröppel und Thorsten Schartel
+
+
+
+Präsentation als Pluto Notebook (**https://github.com/marinusveit/cbvg\_demosaicing\_acpi**)"
+
+
+# ╔═╡ 8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
+md"# Ablauf:
+
+
+- Funktionsweise und Ziel des Algorithmus
+- Ablauf des Algorithmus
+- Praktische Beispiele und Vergleich mit anderen Algorithmen
+- Zusammenfassung
+"
+
+
+# ╔═╡ b25ffb85-4841-45d9-abc7-6a4767a34eb0
+md"# Funktionsweise und Ziel des Algorithmus:
+
+- Mittelungen und Gradienten möglichst entlang von Kanten zu berechnen
+- Bessere Vermeidung von Zipper – Effekten"
+
+
+# ╔═╡ 4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
+md"# Ablauf des Algorithmus:
+
+- Erster Schritt: Rekonstruktion aller Grünwerte der roten- und blauen Hotpixel
+
+ 	![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/gradient_pixel_hv.png)
+
+- Berechnung aller Grünwert-Gradienten der roten und blauen Pixel in horizontaler und vertikaler Richtung nach folgender Formel:
+
+ ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/gradient_hv.png)
+
+
+- Je nachdem welcher Gradient der größere ist, wird eine der beiden folgenden Formeln zur Rekonstruktion des Grünkanals des betrachteten Pixels verwendet.
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_hv.png)
+
+- Der linke Teil des Terms entspricht dabei der bilinearen Interpolation der zweite der einem 1-dimensionalen Laplace-Filter.
+
+
+- **Wichtig** wenn wir den höheren Gradienten auf der horizontalen berechnen verwenden wir für den Grünkanal die vertikale Achse und umgekehrt. Dies vermeidet das bereits genannte Zipper-Problem und erhält die Kanten des Originalbildes. 
+
+
+- Somit haben wir jetzt für alle roten und blauen Hotpixel Grünwerte berechnet.
+
+
+- Im folgenden Schritt werden die noch fehlenden Farbwerte der einzelnen Pixel anhand der berechnete Grünwerte berechnet. D.h. uns fehlen noch folgende Werte:
+
+	-	rote Pixel -> Blauwert
+	-	blaue Pixel -> Rotwert
+	-	grüne Pixel -> Rot- und Blauwert
+
+- Für die Berechnung der roten Pixel wird mithilfe der im vorherigen Schritt erhaltenen Grünwerte der diagonale Gradient nach folgender Formel berechnet. Die blauen Hotpixel werden analog rekonstruiert.
+
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/gradient_pixel_d.png)
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d.png)
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d2.png)
+
+
+
+- Für die Berechnung der fehlenden Farbwerte der grünen Pixel wird kein Gradient verwendet, da an diesen Stellen die Interpolation nur in eine Richtung möglich ist. 
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/image_diagonal_pixel.png)
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_green.png)
+
+- Für jeden Pixel sind nun RGB Werte vorhanden
+
+
+
+- Dieser Algorithmus bietet noch Verbesserunspotenzial
+
+
+
+- Um die Farbwerte grüner Pixel bestimmen zu können müssen in diesem Fall erst alle Rotwerte Blauer Pixel und alle Blauwerte roter Pixel berechnet werden.
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_rb_gradient_enhanced.png)
+
+"
+
+
+
+# ╔═╡ 07d8d0bb-1b5e-41fa-9315-dc8a408dca57
+md"# Praktische Beispiele und Vergleich mit anderen Algorithmen"
+
+# ╔═╡ bfa6f004-e3ab-4363-ab76-b14de80b272a
+html"""<style>
+main {
+    max-width: 900px;
+}
+"""
+
+# ╔═╡ 08647a94-2dcb-4087-a8ed-07813b24061d
+md"## Funktionsdefinitonen"
+
 # ╔═╡ 5f647aac-e087-482a-af80-733fb387b73d
 begin
 	#								toptop
@@ -124,13 +232,6 @@ begin
 
 end
 
-# ╔═╡ bfa6f004-e3ab-4363-ab76-b14de80b272a
-html"""<style>
-main {
-    max-width: 900px;
-}
-"""
-
 # ╔═╡ ef83b17c-b66c-4734-aebe-6a6d9390b914
 # greenchannel.sum(bayerfilter, bottomright, top, left, current)
 begin
@@ -212,6 +313,51 @@ function bayer_colorfilter(image)
 	return bayer_filter
 end
 
+# ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
+begin
+	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
+
+	download(url, "pixel_luigi.jpg")
+end
+
+# ╔═╡ e1afac97-a82e-4f52-89b5-7d3359c870f5
+md"## Beispielbilder"
+
+# ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
+begin
+	luigi = load("pixel_luigi.jpg")
+end
+
+# ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
+begin
+	bayer_luigi = bayer_colorfilter(luigi)
+end
+
+# ╔═╡ 5d426f07-37d7-4c56-95cf-50d3fa6d25ac
+md"### Bayer-Matrix"
+
+# ╔═╡ 8c1b7413-9b9e-44d0-9701-ade1fd3de536
+bayer_luigi[1:10,1:10]
+
+# ╔═╡ 1768def4-ce6b-4e77-835c-1049cdda2cd7
+md"### Luigi Original / Bayer"
+
+# ╔═╡ d1350a2a-e4b9-4767-8b6a-89caeb04bc2b
+hcat(luigi, bayer_luigi)
+
+# ╔═╡ f0a6ebe3-283b-4624-a502-aef32965fb3e
+md"### Luigi Kopfauschnitt Original / Bayer"
+
+# ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
+begin
+	luigis_head = head(luigi, 2)
+	luigi_b_head = head(bayer_luigi, 2)
+	[luigis_head luigi_b_head]
+end
+
+# ╔═╡ c1e450f0-862a-4ec9-aae0-0a64fd660d19
+md"### Bilineare Interpolation"
+
 # ╔═╡ c9f06538-02ec-4dd5-a915-0140741b041f
 # ohne randbetrachtung (randpixel bleiben noch unverändert)
 function bilineare_interpolation(bayer_filter)
@@ -249,45 +395,8 @@ function bilineare_interpolation(bayer_filter)
 	return bilin_interpol
 end
 
-# ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
-begin
-	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
-
-	download(url, "pixel_luigi.jpg")
-end
-
-# ╔═╡ 73d36b18-934a-4470-b195-1dbcd81e7be8
-begin 
-	url_pyramids = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/All_Gizah_Pyramids-2.jpg/1280px-All_Gizah_Pyramids-2.jpg"
-	download(url_pyramids, "pyramids.jpg")
-	pyramids = load("pyramids.jpg")
-end
-
-# ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
-begin
-	luigi = load("pixel_luigi.jpg")
-end
-
-# ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
-begin
-	bayer_luigi = bayer_colorfilter(luigi)
-end
-
-# ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
-begin
-	luigis_head = head(luigi, 2)
-	luigi_b_head = head(bayer_luigi, 2)
-	[luigis_head luigi_b_head]
-end
-
-# ╔═╡ 8c1b7413-9b9e-44d0-9701-ade1fd3de536
-bayer_luigi[1:10,1:10]
-
 # ╔═╡ 1746ff45-7bae-4033-bec9-477ecfb47bd5
 luigi_bilineare_interpolation = bilineare_interpolation(bayer_luigi)
-
-# ╔═╡ 1c9abcb1-8396-41f4-9dad-97a1e1e0aa4f
-
 
 # ╔═╡ 5e2302ad-2e33-4788-9ea9-0a44b9603b5c
 hcat(luigi, bayer_luigi,luigi_bilineare_interpolation)
@@ -297,6 +406,9 @@ begin
 	bi_lin_head = head(luigi_bilineare_interpolation, 2)
 	[luigis_head bi_lin_head]
 end
+
+# ╔═╡ aafc01fd-ca3d-4f73-875a-027f68996789
+md"### HQLIN"
 
 # ╔═╡ 826b8cc7-e2fb-4217-9737-0fa7119dca8d
 function hqlin(bayer_filter)
@@ -395,8 +507,8 @@ begin
 	imresize(compare_images, ratio=5)
 end
 
-# ╔═╡ d4e7a7f1-929c-4be7-943d-4267cedacfc2
-
+# ╔═╡ 58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
+md"### ACPI"
 
 # ╔═╡ 48e4ae5d-5423-442c-9b4e-712f42b84bc2
 function acpi_reconstruct_green_channel(bayer_filter)
@@ -649,20 +761,51 @@ begin
 	imresize(tmp, ratio=5)
 end
 
+# ╔═╡ 79361e3a-2560-4c5a-9b46-4f7bf806a4b3
+md"### Luigi Original / Bilineare Interpolation / HQLIN / ACPI"
+
 # ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
  imresize([luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi], ratio=5)
 
+# ╔═╡ f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
+md"### Luigi Original / Bayer / ACPI-Improved"
+
 # ╔═╡ 8252df35-e34d-4b2a-b486-5da09ece671f
-[acpi_luigi acpi_improved(bayer_luigi)]
+[luigi bayer_luigi acpi_improved(bayer_luigi)]
+
+# ╔═╡ 84cb0878-de7b-47e7-80e5-49150235e7fd
+md"## Pyramiden von Gizeh"
+
+# ╔═╡ 53b4e2d9-4dae-4c58-b0e7-4cd8e9327bbf
+md"### Original"
+
+# ╔═╡ 73d36b18-934a-4470-b195-1dbcd81e7be8
+begin 
+	url_pyramids = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/All_Gizah_Pyramids-2.jpg/1280px-All_Gizah_Pyramids-2.jpg"
+	download(url_pyramids, "pyramids.jpg")
+	pyramids = load("pyramids.jpg")
+end
+
+# ╔═╡ d14e5f22-1ced-4c6c-989b-93bab1b054a0
+md"### Bayer"
 
 # ╔═╡ 380b2cda-50e5-4bca-b1a9-1f1635deddfd
 bayer_pyramids = bayer_colorfilter(pyramids)
 
+# ╔═╡ ecfcd108-65e1-4d74-8d24-7038e892fa90
+md"### ACPI"
+
 # ╔═╡ 4b2cc49f-0a5c-407c-b545-b6692196deff
 acpi_pyramids = acpi(bayer_pyramids)
 
+# ╔═╡ 8496cbd0-7506-43cb-8be9-2d6497fbfc62
+md"### Pyramiden Bilinear / HQLIN / ACPI"
+
 # ╔═╡ 16bba682-6570-43d9-8da1-2a4be8810c67
 [pyramids bilineare_interpolation(bayer_pyramids) hqlin(bayer_pyramids) acpi_pyramids]
+
+# ╔═╡ f91d4767-3264-46f4-8b2a-ce5e23781bfe
+md"### ACPI / ACPI-Improved"
 
 # ╔═╡ be401b81-ea80-4a24-9d33-36f4b8153945
 [acpi_pyramids acpi_improved(bayer_pyramids)]
@@ -687,28 +830,62 @@ end
 # ╔═╡ 35ac183c-de60-4583-b953-a6a7da999eca
 mean_square_error(luigi, bayer_luigi)
 
+# ╔═╡ 75b637cb-30ec-40a6-9234-39e812ed96b4
+md"# Zusammenfassung
+
+Pro:
+- Deutlich reduzierter Zipper Effekt im Vergleich zu den vorangegangenen Algorithmen
+- Dadurch klareres Bild
+
+Contra:
+- Der Rechenaufwand wird verdoppelt, da für jeden Farbwert erst die zwei Gradienten berechnet werden müssen
+- Reihenfolge der Farbwertberechnung entscheidend (Grün -> Rot / Blau)
+
+
+"
+
 # ╔═╡ Cell order:
-# ╠═3d6aecaa-a47e-4197-9f87-d34533f488ca
-# ╠═5f647aac-e087-482a-af80-733fb387b73d
-# ╠═bfa6f004-e3ab-4363-ab76-b14de80b272a
-# ╠═ef83b17c-b66c-4734-aebe-6a6d9390b914
-# ╠═429b0bc0-4e24-48b6-807d-08bb5f39aae2
-# ╠═39502556-161a-4efc-864b-fcf1755db8a4
-# ╠═c9f06538-02ec-4dd5-a915-0140741b041f
-# ╠═92c26370-a774-11eb-163a-3b4671b8c14b
+# ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
+# ╟─50b5fd6d-f293-4824-a5f4-ee9def287be3
+# ╟─8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
+# ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
+# ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
+# ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
+# ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
+# ╟─08647a94-2dcb-4087-a8ed-07813b24061d
+# ╟─5f647aac-e087-482a-af80-733fb387b73d
+# ╟─ef83b17c-b66c-4734-aebe-6a6d9390b914
+# ╟─429b0bc0-4e24-48b6-807d-08bb5f39aae2
+# ╟─39502556-161a-4efc-864b-fcf1755db8a4
+# ╟─92c26370-a774-11eb-163a-3b4671b8c14b
+# ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
+# ╟─a136aaaf-d467-40fa-8fff-ad9817148e6c
+# ╟─e5530339-75e8-4441-9e7a-0f9356c217da
+# ╟─5d426f07-37d7-4c56-95cf-50d3fa6d25ac
+# ╟─8c1b7413-9b9e-44d0-9701-ade1fd3de536
+# ╟─1768def4-ce6b-4e77-835c-1049cdda2cd7
+# ╟─d1350a2a-e4b9-4767-8b6a-89caeb04bc2b
+# ╟─f0a6ebe3-283b-4624-a502-aef32965fb3e
+# ╟─1be3ace0-de06-4bd1-9d31-baaa9b154b18
+# ╟─c1e450f0-862a-4ec9-aae0-0a64fd660d19
+# ╟─c9f06538-02ec-4dd5-a915-0140741b041f
 # ╠═73d36b18-934a-4470-b195-1dbcd81e7be8
-# ╠═a136aaaf-d467-40fa-8fff-ad9817148e6c
-# ╠═e5530339-75e8-4441-9e7a-0f9356c217da
 # ╠═1be3ace0-de06-4bd1-9d31-baaa9b154b18
 # ╠═8c1b7413-9b9e-44d0-9701-ade1fd3de536
 # ╠═1746ff45-7bae-4033-bec9-477ecfb47bd5
-# ╠═1c9abcb1-8396-41f4-9dad-97a1e1e0aa4f
 # ╠═5e2302ad-2e33-4788-9ea9-0a44b9603b5c
 # ╠═b89fb2e2-a3cd-44e7-942a-b09c51deee18
 # ╠═826b8cc7-e2fb-4217-9737-0fa7119dca8d
 # ╠═8db7f71e-0bcc-40c1-be67-7177b251ddae
 # ╠═2b67027a-77a0-40c0-9afc-f52da41d9b2b
-# ╠═d4e7a7f1-929c-4be7-943d-4267cedacfc2
+# ╟─1746ff45-7bae-4033-bec9-477ecfb47bd5
+# ╟─5e2302ad-2e33-4788-9ea9-0a44b9603b5c
+# ╟─b89fb2e2-a3cd-44e7-942a-b09c51deee18
+# ╟─aafc01fd-ca3d-4f73-875a-027f68996789
+# ╟─826b8cc7-e2fb-4217-9737-0fa7119dca8d
+# ╟─8db7f71e-0bcc-40c1-be67-7177b251ddae
+# ╟─2b67027a-77a0-40c0-9afc-f52da41d9b2b
+# ╟─58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
 # ╠═48e4ae5d-5423-442c-9b4e-712f42b84bc2
 # ╠═c00ec842-85a5-4554-94ce-628f28d34b09
 # ╠═211756ce-1b62-491b-9914-a82cfdb663fa
@@ -716,11 +893,21 @@ mean_square_error(luigi, bayer_luigi)
 # ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
 # ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
 # ╠═6b76b17f-0328-4b35-90ba-b149b61cb63c
-# ╠═0df3e1b9-dab5-4087-b5ba-c89f67f67380
-# ╠═8252df35-e34d-4b2a-b486-5da09ece671f
-# ╠═380b2cda-50e5-4bca-b1a9-1f1635deddfd
-# ╠═4b2cc49f-0a5c-407c-b545-b6692196deff
-# ╠═16bba682-6570-43d9-8da1-2a4be8810c67
-# ╠═be401b81-ea80-4a24-9d33-36f4b8153945
+# ╟─79361e3a-2560-4c5a-9b46-4f7bf806a4b3
+# ╟─0df3e1b9-dab5-4087-b5ba-c89f67f67380
+# ╟─f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
+# ╟─8252df35-e34d-4b2a-b486-5da09ece671f
+# ╟─84cb0878-de7b-47e7-80e5-49150235e7fd
+# ╟─53b4e2d9-4dae-4c58-b0e7-4cd8e9327bbf
+# ╟─73d36b18-934a-4470-b195-1dbcd81e7be8
+# ╟─d14e5f22-1ced-4c6c-989b-93bab1b054a0
+# ╟─380b2cda-50e5-4bca-b1a9-1f1635deddfd
+# ╟─ecfcd108-65e1-4d74-8d24-7038e892fa90
+# ╟─4b2cc49f-0a5c-407c-b545-b6692196deff
+# ╟─8496cbd0-7506-43cb-8be9-2d6497fbfc62
+# ╟─16bba682-6570-43d9-8da1-2a4be8810c67
+# ╟─f91d4767-3264-46f4-8b2a-ce5e23781bfe
+# ╟─be401b81-ea80-4a24-9d33-36f4b8153945
 # ╠═955c3038-6203-43c3-b453-0e483725ae9b
 # ╠═35ac183c-de60-4583-b953-a6a7da999eca
+# ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
