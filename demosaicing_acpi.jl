@@ -869,15 +869,6 @@ Contra:
 # ╟─1be3ace0-de06-4bd1-9d31-baaa9b154b18
 # ╟─c1e450f0-862a-4ec9-aae0-0a64fd660d19
 # ╟─c9f06538-02ec-4dd5-a915-0140741b041f
-# ╠═73d36b18-934a-4470-b195-1dbcd81e7be8
-# ╠═1be3ace0-de06-4bd1-9d31-baaa9b154b18
-# ╠═8c1b7413-9b9e-44d0-9701-ade1fd3de536
-# ╠═1746ff45-7bae-4033-bec9-477ecfb47bd5
-# ╠═5e2302ad-2e33-4788-9ea9-0a44b9603b5c
-# ╠═b89fb2e2-a3cd-44e7-942a-b09c51deee18
-# ╠═826b8cc7-e2fb-4217-9737-0fa7119dca8d
-# ╠═8db7f71e-0bcc-40c1-be67-7177b251ddae
-# ╠═2b67027a-77a0-40c0-9afc-f52da41d9b2b
 # ╟─1746ff45-7bae-4033-bec9-477ecfb47bd5
 # ╟─5e2302ad-2e33-4788-9ea9-0a44b9603b5c
 # ╟─b89fb2e2-a3cd-44e7-942a-b09c51deee18
