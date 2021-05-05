@@ -31,7 +31,7 @@ md"# Präsentation zum Thema Demosaicing
 
 
 
-Präsentation als Pluto Notebook (**https://github.com/marinusveit/cbvg\_demosaicing\_acpi**)"
+Präsentation als [Pluto Notebook](https://github.com/marinusveit/cbvg_demosaicing_acpi/)"
 
 
 # ╔═╡ 8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
@@ -812,19 +812,21 @@ md"### ACPI / ACPI-Improved"
 
 # ╔═╡ 955c3038-6203-43c3-b453-0e483725ae9b
 function mean_square_error(original, reconstructed)
-	if size(original) != size(reconstructed)
-		return -1
-	end
-	(height, width) = size(original)
-	total_sq_err = 0.0
-	
-	for (row, column) in size(original)
-		total_sq_err += square(original[row, column].r - reconstructed[row, column].r)
-		total_sq_err += square(original[row, column].g - reconstructed[row, column].g)
-		total_sq_err += square(original[row, column].b - reconstructed[row, column].b)
-	end
-	
-	return total_sq_err/(height * width)
+    if size(original) != size(reconstructed)
+        return -1
+    end
+    (height, width) = size(original)
+    total_sq_err = 0.0
+    
+    for row in 1:height
+        for column in 1:width
+            total_sq_err += (convert(Float32, original[row, column].r) - convert(Float32, reconstructed[row, column].r))^2
+            total_sq_err += (convert(Float32, original[row, column].g) - convert(Float32, reconstructed[row, column].g))^2
+            total_sq_err += (convert(Float32, original[row, column].b) - convert(Float32, reconstructed[row, column].b))^2
+        end
+    end
+    
+    return total_sq_err/(height * width)
 end
 
 # ╔═╡ 35ac183c-de60-4583-b953-a6a7da999eca
