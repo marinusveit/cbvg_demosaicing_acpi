@@ -313,6 +313,25 @@ function bayer_colorfilter(image)
 	return bayer_filter
 end
 
+# ╔═╡ 955c3038-6203-43c3-b453-0e483725ae9b
+function mean_square_error(original, reconstructed)
+    if size(original) != size(reconstructed)
+        return -1
+    end
+    (height, width) = size(original)
+    total_sq_err = 0.0
+    
+    for row in 1:height
+        for column in 1:width
+            total_sq_err += (convert(Float32, original[row, column].r) - convert(Float32, reconstructed[row, column].r))^2
+            total_sq_err += (convert(Float32, original[row, column].g) - convert(Float32, reconstructed[row, column].g))^2
+            total_sq_err += (convert(Float32, original[row, column].b) - convert(Float32, reconstructed[row, column].b))^2
+        end
+    end
+    
+    return total_sq_err/(height * width * 3)
+end
+
 # ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
 begin
 	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
@@ -578,7 +597,7 @@ begin
 end
 
 # ╔═╡ 211756ce-1b62-491b-9914-a82cfdb663fa
-function acpi_reconstruct_red_blue_channel(acpi_green_channel, bayer_filter)
+function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 	acpi = copy(acpi_green_channel)
 	(height, width) = size(acpi_green_channel)
 
@@ -652,24 +671,46 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel, bayer_filter)
 	return acpi
 end
 
+# ╔═╡ bc8381e8-94ea-48a9-8897-61eb5826fae9
+function acpi(bayer_filter)
+	green_channel = acpi_reconstruct_green_channel(bayer_filter)
+	return acpi_reconstruct_red_blue_channel(green_channel)
+end
+
+# ╔═╡ 6b76b17f-0328-4b35-90ba-b149b61cb63c
+begin
+	acpi_luigi = acpi(bayer_luigi)
+	tmp = [luigi bayer_luigi acpi_green_luigi acpi_luigi]
+	imresize(tmp, ratio=5)
+end
+
+# ╔═╡ 79361e3a-2560-4c5a-9b46-4f7bf806a4b3
+md"### Luigi Original / Bilineare Interpolation / HQLIN / ACPI"
+
+# ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
+ imresize([luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi], ratio=5)
+
+# ╔═╡ be312185-0455-4ad0-8972-ce251038d999
+md"### Verbesserter ACPI Algorithmus"
+
 # ╔═╡ b42bc451-71fd-48bf-b8c3-478b9de5d506
-function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel, bayer_filter)
+function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel)
 	acpi = copy(acpi_green_channel)
 	(height, width) = size(acpi_green_channel)
 
-	#1. Reconstruct red/blue for blue/red hotpixels
+	#1. Rekonstruieren der Rot- bzw. Blauwerte für blaue bzw. rote Hotpixel
 	
 	# rotes hotpixel
 	for (row, column) in redhotpixels(acpi_green_channel)
-		# rekonstruieren des blaukanals
-		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
+		# rekonstruieren des Blaukanals
+		# 1. Gradienten bestimmen
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
 		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (rechts oben nach links unten)
 		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
-		# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
-		if g_neg < g_pos # TODO: prüfen ob buch hier falsch liegt
+		# diagonal positiver gradient größer => rekonstruktion in diagonal negative Richtung
+		if g_neg <= g_pos
 			blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), top_left, bottom_right)
 			blue += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1))
 		else
@@ -686,13 +727,12 @@ function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel, bayer_fi
 		# rekonstruieren des blaukanals
 		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
-		# TODO: wird auch in red benötigt => auslagern
-		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
+		g_neg = abs(sum_red_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (links oben nach rechts unten)
-		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
+		g_pos = abs(sum_red_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
-		# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
-		if g_neg < g_pos # TODO: prüfen ob buch hier falsch liegt
+		# diagonal positiver gradient größer => rekonstruktion in diagonal negative Richtung
+		if g_neg <= g_pos
 			red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), top_left, bottom_right)
 			red += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1))
 		else
@@ -703,18 +743,18 @@ function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel, bayer_fi
 		red = clamp(red, 0.0, 1.0)
 		acpi[row, column] = RGB(red, acpi_green_channel[row, column].g, acpi_green_channel[row, column].b)
 	end
+	# blaue und rote Hotpixel sind jetzt vollständig rekonstruiert
 	
-	#2. Reconstruct red&blue for green hotpixels with help of reconstructed red/blue values for blue/red hotpixels
-	
-	
+	# Rot-/Blauwerte für grüne Hotpixel berechenen.	
 	
 	# grünes hotpixel
 	for (row, column) in [reshape(green_red_hotpixels(acpi_green_channel), :, 1) ; reshape(green_blue_hotpixels(acpi_green_channel), :, 1)]
-		#1. Rot rekonstruieren:
+		
+		# Rot rekonstruieren:
 		g_horizontal_red = abs(sum_red_channel(acpi, (row, column), (left, 1), (right, -1))) + abs(sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1)))
-		# 1.2 vertikaler gradient
 		g_vertical_red = abs(sum_red_channel(acpi, (row, column), (top, 1), (bottom, -1))) + 
 abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)))
+		
 		if g_horizontal_red > g_vertical_red
 			red = 0.5 * sum_red_channel(acpi, (row, column), top, bottom)
 			red += 0.5 * sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1))
@@ -722,11 +762,12 @@ abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)
 			red = 0.5 * sum_red_channel(acpi, (row, column), left, right)
 			red += 0.5 * sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1))
 		end
-		#Blau rekonstruieren
+		
+		# Blau rekonstruieren
 		g_horizontal_blue = abs(sum_blue_channel(acpi, (row, column), (left, 1), (right, -1))) + abs(sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1)))
-		# 1.2 vertikaler gradient
 		g_vertical_blue = abs(sum_blue_channel(acpi, (row, column), (top, 1), (bottom, -1))) + 
 abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)))
+		
 		if g_horizontal_blue > g_vertical_blue
 			blue = 0.5 * sum_blue_channel(acpi, (row, column), top, bottom)
 			blue += 0.5 * sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1))
@@ -734,6 +775,7 @@ abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)
 			blue = 0.5 * sum_blue_channel(acpi, (row, column), left, right)
 			blue += 0.5 * sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1))
 		end
+		
 		# nur noch werte zwischen 0 und 1
 		red = clamp(red, 0.0, 1.0)
 		blue = clamp(blue, 0.0, 1.0)
@@ -742,36 +784,75 @@ abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)
 	return acpi
 end
 
-# ╔═╡ bc8381e8-94ea-48a9-8897-61eb5826fae9
-function acpi(bayer_filter)
-	green_channel = acpi_reconstruct_green_channel(bayer_filter)
-	return acpi_reconstruct_red_blue_channel(green_channel, bayer_filter)
-end
-
 # ╔═╡ 4911dcb5-16e4-49ac-b0a8-1147f373eb03
 function acpi_improved(bayer_filter)
 	green_channel = acpi_reconstruct_green_channel(bayer_filter)
-	return acpi_reconstruct_red_blue_channel_improved(green_channel, bayer_filter)
+	return acpi_reconstruct_red_blue_channel_improved(green_channel)
 end
-
-# ╔═╡ 6b76b17f-0328-4b35-90ba-b149b61cb63c
-begin
-	acpi_luigi = acpi(bayer_luigi)
-	tmp = [luigi bayer_luigi acpi_green_luigi acpi_luigi]
-	imresize(tmp, ratio=5)
-end
-
-# ╔═╡ 79361e3a-2560-4c5a-9b46-4f7bf806a4b3
-md"### Luigi Original / Bilineare Interpolation / HQLIN / ACPI"
-
-# ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
- imresize([luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi], ratio=5)
 
 # ╔═╡ f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
-md"### Luigi Original / Bayer / ACPI-Improved"
+md"### Vergleich Ergebnis ACPI / ACPI-Improved"
 
 # ╔═╡ 8252df35-e34d-4b2a-b486-5da09ece671f
-[luigi bayer_luigi acpi_improved(bayer_luigi)]
+begin
+	acpi_impr_luigi = acpi_improved(bayer_luigi)
+	acpi_comp = [acpi_luigi acpi_impr_luigi]
+	imresize(acpi_comp, ratio=5)
+end
+
+# ╔═╡ bd600deb-4487-4ddc-93d3-0732c3756222
+begin
+	# detailed view for[acpi_luigi[45:90, 25:70] acpi_impr_luigi[45:90, 25:70]]	
+	# and [bayer_luigi[57:60, 28:31] acpi_luigi[57:60, 28:31] acpi_impr_luigi[57:60, 28:31]]
+	md"
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_compare.png)
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_improved_edge_compare.png)
+	"
+end
+
+# ╔═╡ b10ff028-7b2f-4f13-8c57-c48094b45d0a
+md"
+Blaues Hotpixel:
+rgb = ($(acpi_luigi[58,29].r), $(acpi_luigi[58,29].g), $(acpi_luigi[58,29].b))
+"
+
+# ╔═╡ c6055fb7-85eb-4fd7-9c97-f8e1b0c8c2ca
+acpi_luigi[58,29]
+
+# ╔═╡ 7fbe514f-cb80-42fb-b19b-957eb5a46d29
+md"
+Rotes Hotpixel:
+rgb = ($(acpi_luigi[59,30].r), $(acpi_luigi[59,30].g), $(acpi_luigi[59,30].b))
+"
+
+# ╔═╡ 64801f9b-1656-4edd-8ab6-f9976c4d27a9
+acpi_luigi[59,30]
+
+# ╔═╡ 57aead97-1213-4e4b-8c94-27121b5f1592
+md"
+Fuer die blauen hotpixel wird der rotwert reduziert (durch diagonales interpolieren mit schwarz -> r=0)
+Fuer die Roten Hotpixel wird blau gesetzt (durch diagonales interpolieren)
+"
+
+# ╔═╡ 6fe25fc4-dc21-49bc-bff6-0e65d714761e
+begin
+	bilin_mse = mean_square_error(luigi, luigi_bilineare_interpolation)
+	hqlin_mse = mean_square_error(luigi, luigi_hqlin)
+	acpi_mse = mean_square_error(luigi, acpi_luigi)
+	acpi_impr_mse = mean_square_error(luigi, acpi_impr_luigi)
+	md"
+#### Vergleich Abweichung vom Originalbild
+	
+| Demosaicing Algorithmus        | Mean Squared Error| Mean Error             |
+| ------------------------------ |:----------------- |:---------------------- |
+| Bilineare Interpolation        | $(bilin_mse)      | $(sqrt(bilin_mse))     |
+| HQLin                          | $(hqlin_mse)      | $(sqrt(hqlin_mse))     |
+| ACPI                           | $(acpi_mse)       | $(sqrt(acpi_mse))      |
+| ACPI Improved                  | $(acpi_impr_mse)  | $(sqrt(acpi_impr_mse)) |
+	"
+end
 
 # ╔═╡ 84cb0878-de7b-47e7-80e5-49150235e7fd
 md"## Pyramiden von Gizeh"
@@ -810,25 +891,6 @@ md"### ACPI / ACPI-Improved"
 # ╔═╡ be401b81-ea80-4a24-9d33-36f4b8153945
 [acpi_pyramids acpi_improved(bayer_pyramids)]
 
-# ╔═╡ 955c3038-6203-43c3-b453-0e483725ae9b
-function mean_square_error(original, reconstructed)
-    if size(original) != size(reconstructed)
-        return -1
-    end
-    (height, width) = size(original)
-    total_sq_err = 0.0
-    
-    for row in 1:height
-        for column in 1:width
-            total_sq_err += (convert(Float32, original[row, column].r) - convert(Float32, reconstructed[row, column].r))^2
-            total_sq_err += (convert(Float32, original[row, column].g) - convert(Float32, reconstructed[row, column].g))^2
-            total_sq_err += (convert(Float32, original[row, column].b) - convert(Float32, reconstructed[row, column].b))^2
-        end
-    end
-    
-    return total_sq_err/(height * width)
-end
-
 # ╔═╡ 35ac183c-de60-4583-b953-a6a7da999eca
 mean_square_error(luigi, bayer_luigi)
 
@@ -836,12 +898,25 @@ mean_square_error(luigi, bayer_luigi)
 md"# Zusammenfassung
 
 Pro:
-- Deutlich reduzierter Zipper Effekt im Vergleich zu den vorangegangenen Algorithmen
-- Dadurch klareres Bild
+- Reduzierter Zipper-Effekt durch Interpolation entlang von Kanten
+- Dadurch schärferes Bild
 
 Contra:
 - Der Rechenaufwand wird verdoppelt, da für jeden Farbwert erst die zwei Gradienten berechnet werden müssen
 - Reihenfolge der Farbwertberechnung entscheidend (Grün -> Rot / Blau)
+- Schlechter parallelisierbar
+
+"
+
+# ╔═╡ c4862dba-90dc-458f-b70a-073eae112f28
+md"
+### Quellen:
+A. Nischwitz, M. Fischer, G. Socher, P. Haberäcker
+Bildverarbeitung, Band 2 des Standardwerks Computergrafik und Bildverarbeitung
+ISBN 978-3-658-28704-7
+Springer Vieweg, Wiesbaden, 2020
+
+Bilder: https://www.deviantart.com/zeekthehedgie/art/Pixel-Luigi-708455637
 
 
 "
@@ -851,7 +926,7 @@ Contra:
 # ╟─50b5fd6d-f293-4824-a5f4-ee9def287be3
 # ╟─8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
-# ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
+# ╠═4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
 # ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
@@ -859,6 +934,7 @@ Contra:
 # ╟─ef83b17c-b66c-4734-aebe-6a6d9390b914
 # ╟─429b0bc0-4e24-48b6-807d-08bb5f39aae2
 # ╟─39502556-161a-4efc-864b-fcf1755db8a4
+# ╟─955c3038-6203-43c3-b453-0e483725ae9b
 # ╟─92c26370-a774-11eb-163a-3b4671b8c14b
 # ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
 # ╟─a136aaaf-d467-40fa-8fff-ad9817148e6c
@@ -882,14 +958,22 @@ Contra:
 # ╠═48e4ae5d-5423-442c-9b4e-712f42b84bc2
 # ╠═c00ec842-85a5-4554-94ce-628f28d34b09
 # ╠═211756ce-1b62-491b-9914-a82cfdb663fa
-# ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
 # ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
-# ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
 # ╠═6b76b17f-0328-4b35-90ba-b149b61cb63c
 # ╟─79361e3a-2560-4c5a-9b46-4f7bf806a4b3
 # ╟─0df3e1b9-dab5-4087-b5ba-c89f67f67380
+# ╟─be312185-0455-4ad0-8972-ce251038d999
+# ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
+# ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
 # ╟─f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
-# ╟─8252df35-e34d-4b2a-b486-5da09ece671f
+# ╠═8252df35-e34d-4b2a-b486-5da09ece671f
+# ╠═bd600deb-4487-4ddc-93d3-0732c3756222
+# ╟─b10ff028-7b2f-4f13-8c57-c48094b45d0a
+# ╟─c6055fb7-85eb-4fd7-9c97-f8e1b0c8c2ca
+# ╟─7fbe514f-cb80-42fb-b19b-957eb5a46d29
+# ╟─64801f9b-1656-4edd-8ab6-f9976c4d27a9
+# ╠═57aead97-1213-4e4b-8c94-27121b5f1592
+# ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
 # ╟─84cb0878-de7b-47e7-80e5-49150235e7fd
 # ╟─53b4e2d9-4dae-4c58-b0e7-4cd8e9327bbf
 # ╟─73d36b18-934a-4470-b195-1dbcd81e7be8
@@ -901,6 +985,6 @@ Contra:
 # ╟─16bba682-6570-43d9-8da1-2a4be8810c67
 # ╟─f91d4767-3264-46f4-8b2a-ce5e23781bfe
 # ╟─be401b81-ea80-4a24-9d33-36f4b8153945
-# ╠═955c3038-6203-43c3-b453-0e483725ae9b
 # ╠═35ac183c-de60-4583-b953-a6a7da999eca
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
+# ╟─c4862dba-90dc-458f-b70a-073eae112f28
