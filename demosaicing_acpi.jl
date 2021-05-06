@@ -854,46 +854,6 @@ begin
 	"
 end
 
-# ╔═╡ 84cb0878-de7b-47e7-80e5-49150235e7fd
-md"## Pyramiden von Gizeh"
-
-# ╔═╡ 53b4e2d9-4dae-4c58-b0e7-4cd8e9327bbf
-md"### Original"
-
-# ╔═╡ 73d36b18-934a-4470-b195-1dbcd81e7be8
-begin 
-	url_pyramids = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/All_Gizah_Pyramids-2.jpg/1280px-All_Gizah_Pyramids-2.jpg"
-	download(url_pyramids, "pyramids.jpg")
-	pyramids = load("pyramids.jpg")
-end
-
-# ╔═╡ d14e5f22-1ced-4c6c-989b-93bab1b054a0
-md"### Bayer"
-
-# ╔═╡ 380b2cda-50e5-4bca-b1a9-1f1635deddfd
-bayer_pyramids = bayer_colorfilter(pyramids)
-
-# ╔═╡ ecfcd108-65e1-4d74-8d24-7038e892fa90
-md"### ACPI"
-
-# ╔═╡ 4b2cc49f-0a5c-407c-b545-b6692196deff
-acpi_pyramids = acpi(bayer_pyramids)
-
-# ╔═╡ 8496cbd0-7506-43cb-8be9-2d6497fbfc62
-md"### Pyramiden Bilinear / HQLIN / ACPI"
-
-# ╔═╡ 16bba682-6570-43d9-8da1-2a4be8810c67
-[pyramids bilineare_interpolation(bayer_pyramids) hqlin(bayer_pyramids) acpi_pyramids]
-
-# ╔═╡ f91d4767-3264-46f4-8b2a-ce5e23781bfe
-md"### ACPI / ACPI-Improved"
-
-# ╔═╡ be401b81-ea80-4a24-9d33-36f4b8153945
-[acpi_pyramids acpi_improved(bayer_pyramids)]
-
-# ╔═╡ 35ac183c-de60-4583-b953-a6a7da999eca
-mean_square_error(luigi, bayer_luigi)
-
 # ╔═╡ 75b637cb-30ec-40a6-9234-39e812ed96b4
 md"# Zusammenfassung
 
@@ -974,17 +934,5 @@ Bilder: https://www.deviantart.com/zeekthehedgie/art/Pixel-Luigi-708455637
 # ╟─64801f9b-1656-4edd-8ab6-f9976c4d27a9
 # ╠═57aead97-1213-4e4b-8c94-27121b5f1592
 # ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
-# ╟─84cb0878-de7b-47e7-80e5-49150235e7fd
-# ╟─53b4e2d9-4dae-4c58-b0e7-4cd8e9327bbf
-# ╟─73d36b18-934a-4470-b195-1dbcd81e7be8
-# ╟─d14e5f22-1ced-4c6c-989b-93bab1b054a0
-# ╟─380b2cda-50e5-4bca-b1a9-1f1635deddfd
-# ╟─ecfcd108-65e1-4d74-8d24-7038e892fa90
-# ╟─4b2cc49f-0a5c-407c-b545-b6692196deff
-# ╟─8496cbd0-7506-43cb-8be9-2d6497fbfc62
-# ╟─16bba682-6570-43d9-8da1-2a4be8810c67
-# ╟─f91d4767-3264-46f4-8b2a-ce5e23781bfe
-# ╟─be401b81-ea80-4a24-9d33-36f4b8153945
-# ╠═35ac183c-de60-4583-b953-a6a7da999eca
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
 # ╟─c4862dba-90dc-458f-b70a-073eae112f28
