@@ -9,10 +9,12 @@ using InteractiveUtils
 begin
 	import Pkg
 	using Pkg
-	Pkg.add("PlutoUI")
-	Pkg.add("Images")
-	Pkg.add("TestImages")
-	Pkg.add("ImageTransformations")
+	Pkg.add(["PlutoUI", "Images", "TestImages", "ImageTransformations", "ImageIO", "DSP"])
+	#Pkg.add("Images")
+	#Pkg.add("TestImages")
+	#Pkg.add("ImageTransformations")
+	using DSP
+	using ImageIO
 	using ImageTransformations
 	using TestImages
 	using Images
@@ -125,8 +127,14 @@ main {
 }
 """
 
+# ╔═╡ 8e3044b1-3841-4e67-8874-860a6bff1e73
+md"## Imports"
+
 # ╔═╡ 08647a94-2dcb-4087-a8ed-07813b24061d
 md"## Funktionsdefinitonen"
+
+# ╔═╡ 8d35277d-f963-48ed-b472-ca44ccb972be
+decimate(image, ratio=5) = image[1:ratio:end, 1:ratio:end]
 
 # ╔═╡ 5f647aac-e087-482a-af80-733fb387b73d
 begin
@@ -169,11 +177,7 @@ begin
 		#return imresize(head, size(head).*resize)
 	end
 	
-	"""
-	    sum_color(
-	
-	
-	"""
+
 	function sum_red_channel(image, current_pixel_position::Tuple{Int64, Int64}, pixel_coordinates::Tuple{Int64, Int64}...)
 		result = 0.0
 		for param in pixel_coordinates # firstindex()+2:lastindex()
@@ -332,47 +336,60 @@ function mean_square_error(original, reconstructed)
     return total_sq_err/(height * width * 3)
 end
 
-# ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
-begin
-	url = "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/49c5b1cb-dc91-4d68-8aad-91b7c444aa77/dbpsnv9-68a6a080-4136-479d-bf58-ab38ebfad2e6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ5YzViMWNiLWRjOTEtNGQ2OC04YWFkLTkxYjdjNDQ0YWE3N1wvZGJwc252OS02OGE2YTA4MC00MTM2LTQ3OWQtYmY1OC1hYjM4ZWJmYWQyZTYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.CiJ9jFsCBqlWUjSjMX9WHJEK-D7vpHHEi82oaI-44LI"
-
-	download(url, "pixel_luigi.jpg")
+# ╔═╡ 98ed88b4-6359-48e4-8163-5904dea355a7
+function image_section(image)
+	return image[30:115,30:115]
 end
 
 # ╔═╡ e1afac97-a82e-4f52-89b5-7d3359c870f5
 md"## Beispielbilder"
 
-# ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
+# ╔═╡ 8b31c48b-c90e-473c-b2f8-fe514f761406
+md"- Bild downloaden
+- Bild in Notebook laden
+- Bildgröße reduzieren"
+
+# ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
 begin
-	#luigi = load("pixel_luigi.jpg")
-	luigi = load("plane.png")
+	url="http://sipi.usc.edu/database/preview/misc/4.1.05.png"
+	download(url, "house.png")
+	original_image = load("house.png")
+	#original_image = decimate(original_image, 2)
 end
+
+# ╔═╡ 6aabb223-d22f-4ad2-a6f1-291cb7a4b256
+md"##### Bild in Notebook laden und die größe reduzieren"
+
+# ╔═╡ bf683c6e-bf61-47c3-9556-2cc9fec7f3e0
+image_section(original_image)
+
+# ╔═╡ c7aa1107-4e59-47da-af70-ae7608bc6065
+md"##### Bayer Farbfilter
+- Photozelle auf dem Halbleiter können nur Helligkeitswerte erfassen
+- vor jeder Zelle kleiner Farbfilter in einen der drei Grundfarben
+- 50 % G
+Da die Kamera nurDer Bayerfarbfilter eines Bildes ist der Input für die Demosaicing Algorithmen.
+"
 
 # ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
 begin
-	bayer_luigi = bayer_colorfilter(luigi)
+	bayer_image = bayer_colorfilter(original_image)
 end
 
 # ╔═╡ 5d426f07-37d7-4c56-95cf-50d3fa6d25ac
 md"### Bayer-Matrix"
 
 # ╔═╡ 8c1b7413-9b9e-44d0-9701-ade1fd3de536
-bayer_luigi[1:10,1:10]
+begin
+	bayer_image[50:60,50:60]
+end
 
 # ╔═╡ 1768def4-ce6b-4e77-835c-1049cdda2cd7
-md"### Luigi Original / Bayer"
-
-# ╔═╡ d1350a2a-e4b9-4767-8b6a-89caeb04bc2b
-hcat(luigi, bayer_luigi)
-
-# ╔═╡ f0a6ebe3-283b-4624-a502-aef32965fb3e
-md"### Luigi Kopfauschnitt Original / Bayer"
+md"### Original / Bayer Farbfilter"
 
 # ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
 begin
-	luigis_head = head(luigi, 2)
-	luigi_b_head = head(bayer_luigi, 2)
-	[luigis_head luigi_b_head]
+	imresize([image_section(original_image) image_section(bayer_image)], ratio=5)
 end
 
 # ╔═╡ c1e450f0-862a-4ec9-aae0-0a64fd660d19
@@ -416,16 +433,7 @@ function bilineare_interpolation(bayer_filter)
 end
 
 # ╔═╡ 1746ff45-7bae-4033-bec9-477ecfb47bd5
-luigi_bilineare_interpolation = bilineare_interpolation(bayer_luigi)
-
-# ╔═╡ 5e2302ad-2e33-4788-9ea9-0a44b9603b5c
-hcat(luigi, bayer_luigi,luigi_bilineare_interpolation)
-
-# ╔═╡ b89fb2e2-a3cd-44e7-942a-b09c51deee18
-begin
-	bi_lin_head = head(luigi_bilineare_interpolation, 2)
-	[luigis_head bi_lin_head]
-end
+image_bilin = bilineare_interpolation(bayer_image)
 
 # ╔═╡ aafc01fd-ca3d-4f73-875a-027f68996789
 md"### HQLIN"
@@ -519,13 +527,7 @@ function hqlin(bayer_filter)
 end
 
 # ╔═╡ 8db7f71e-0bcc-40c1-be67-7177b251ddae
-luigi_hqlin = hqlin(bayer_luigi)
-
-# ╔═╡ 2b67027a-77a0-40c0-9afc-f52da41d9b2b
-begin
-	compare_images = [luigi luigi_bilineare_interpolation luigi_hqlin]
-	imresize(compare_images, ratio=5)
-end
+image_hqlin = hqlin(bayer_image)
 
 # ╔═╡ 58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
 md"### ACPI"
@@ -593,8 +595,8 @@ end
 
 # ╔═╡ c00ec842-85a5-4554-94ce-628f28d34b09
 begin
-	acpi_green_luigi = acpi_reconstruct_green_channel(bayer_luigi)
-	[bayer_luigi acpi_green_luigi]
+	acpi_green_image = acpi_reconstruct_green_channel(bayer_image)
+	[bayer_image acpi_green_image]
 end
 
 # ╔═╡ 211756ce-1b62-491b-9914-a82cfdb663fa
@@ -678,18 +680,21 @@ function acpi(bayer_filter)
 	return acpi_reconstruct_red_blue_channel(green_channel)
 end
 
+# ╔═╡ 9b8c48ab-3b38-4eb6-80ed-df1dedbd2b4e
+md"### Original Bild / Bayer Farbfilter / rekonstruierter Grünkanal / ACPI"
+
 # ╔═╡ 6b76b17f-0328-4b35-90ba-b149b61cb63c
 begin
-	acpi_luigi = acpi(bayer_luigi)
-	tmp = [luigi bayer_luigi acpi_green_luigi acpi_luigi]
+	acpi_image = acpi(bayer_image)
+	tmp = [image_section(original_image) image_section(bayer_image) image_section(acpi_green_image) image_section(acpi_image)]
 	imresize(tmp, ratio=5)
 end
 
 # ╔═╡ 79361e3a-2560-4c5a-9b46-4f7bf806a4b3
-md"### Luigi Original / Bilineare Interpolation / HQLIN / ACPI"
+md"### Original Bild / Bilineare Interpolation / HQLIN / ACPI"
 
 # ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
- imresize([luigi luigi_bilineare_interpolation luigi_hqlin acpi_luigi], ratio=5)
+ imresize([image_section(original_image) image_section(image_bilin) image_section(image_hqlin) image_section(acpi_image)], ratio=5)
 
 # ╔═╡ be312185-0455-4ad0-8972-ce251038d999
 md"### Verbesserter ACPI Algorithmus"
@@ -796,8 +801,8 @@ md"### Vergleich Ergebnis ACPI / ACPI-Improved"
 
 # ╔═╡ 8252df35-e34d-4b2a-b486-5da09ece671f
 begin
-	acpi_impr_luigi = acpi_improved(bayer_luigi)
-	acpi_comp = [acpi_luigi acpi_impr_luigi]
+	acpi_impr_image = acpi_improved(bayer_image)
+	acpi_comp = [acpi_image acpi_impr_image]
 	imresize(acpi_comp, ratio=5)
 end
 
@@ -816,11 +821,11 @@ end
 # ╔═╡ b10ff028-7b2f-4f13-8c57-c48094b45d0a
 md"
 Blaues Hotpixel:
-rgb = ($(acpi_luigi[58,29].r), $(acpi_luigi[58,29].g), $(acpi_luigi[58,29].b))
+rgb = ($(acpi_image[58,29].r), $(acpi_image[58,29].g), $(acpi_image[58,29].b))
 "
 
 # ╔═╡ c6055fb7-85eb-4fd7-9c97-f8e1b0c8c2ca
-acpi_luigi[58,29]
+acpi_image[58,29]
 
 # ╔═╡ 7fbe514f-cb80-42fb-b19b-957eb5a46d29
 md"
@@ -829,7 +834,7 @@ rgb = ($(acpi_luigi[59,30].r), $(acpi_luigi[59,30].g), $(acpi_luigi[59,30].b))
 "
 
 # ╔═╡ 64801f9b-1656-4edd-8ab6-f9976c4d27a9
-acpi_luigi[59,30]
+acpi_image[59,30]
 
 # ╔═╡ 57aead97-1213-4e4b-8c94-27121b5f1592
 md"
@@ -839,10 +844,10 @@ Fuer die Roten Hotpixel wird blau gesetzt (durch diagonales interpolieren)
 
 # ╔═╡ 6fe25fc4-dc21-49bc-bff6-0e65d714761e
 begin
-	bilin_mse = mean_square_error(luigi, luigi_bilineare_interpolation)
-	hqlin_mse = mean_square_error(luigi, luigi_hqlin)
-	acpi_mse = mean_square_error(luigi, acpi_luigi)
-	acpi_impr_mse = mean_square_error(luigi, acpi_impr_luigi)
+	bilin_mse = mean_square_error(original_image, image_bilin)
+	hqlin_mse = mean_square_error(original_image, image_hqlin)
+	acpi_mse = mean_square_error(original_image, acpi_image)
+	acpi_impr_mse = mean_square_error(original_image, acpi_impr_image)
 	md"
 #### Vergleich Abweichung vom Originalbild
 	
@@ -877,52 +882,52 @@ Bildverarbeitung, Band 2 des Standardwerks Computergrafik und Bildverarbeitung
 ISBN 978-3-658-28704-7
 Springer Vieweg, Wiesbaden, 2020
 
-Bilder: https://www.deviantart.com/zeekthehedgie/art/Pixel-Luigi-708455637
-
-
+Bilder: [USC Universiy of Southern California, Signal and Image Processing Institute](http://sipi.usc.edu/database/database.php?volume=misc&image=5#top)
 "
 
 # ╔═╡ Cell order:
-# ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╟─50b5fd6d-f293-4824-a5f4-ee9def287be3
 # ╟─8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
 # ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
 # ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
+# ╟─8e3044b1-3841-4e67-8874-860a6bff1e73
+# ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
+# ╠═8d35277d-f963-48ed-b472-ca44ccb972be
 # ╟─5f647aac-e087-482a-af80-733fb387b73d
 # ╟─ef83b17c-b66c-4734-aebe-6a6d9390b914
 # ╟─429b0bc0-4e24-48b6-807d-08bb5f39aae2
 # ╟─39502556-161a-4efc-864b-fcf1755db8a4
 # ╟─955c3038-6203-43c3-b453-0e483725ae9b
-# ╟─92c26370-a774-11eb-163a-3b4671b8c14b
+# ╠═98ed88b4-6359-48e4-8163-5904dea355a7
 # ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
-# ╠═a136aaaf-d467-40fa-8fff-ad9817148e6c
-# ╟─e5530339-75e8-4441-9e7a-0f9356c217da
+# ╟─8b31c48b-c90e-473c-b2f8-fe514f761406
+# ╠═92c26370-a774-11eb-163a-3b4671b8c14b
+# ╟─6aabb223-d22f-4ad2-a6f1-291cb7a4b256
+# ╠═bf683c6e-bf61-47c3-9556-2cc9fec7f3e0
+# ╟─c7aa1107-4e59-47da-af70-ae7608bc6065
+# ╠═e5530339-75e8-4441-9e7a-0f9356c217da
 # ╟─5d426f07-37d7-4c56-95cf-50d3fa6d25ac
-# ╟─8c1b7413-9b9e-44d0-9701-ade1fd3de536
-# ╟─1768def4-ce6b-4e77-835c-1049cdda2cd7
-# ╟─d1350a2a-e4b9-4767-8b6a-89caeb04bc2b
-# ╟─f0a6ebe3-283b-4624-a502-aef32965fb3e
-# ╟─1be3ace0-de06-4bd1-9d31-baaa9b154b18
+# ╠═8c1b7413-9b9e-44d0-9701-ade1fd3de536
+# ╠═1768def4-ce6b-4e77-835c-1049cdda2cd7
+# ╠═1be3ace0-de06-4bd1-9d31-baaa9b154b18
 # ╟─c1e450f0-862a-4ec9-aae0-0a64fd660d19
 # ╟─c9f06538-02ec-4dd5-a915-0140741b041f
-# ╟─1746ff45-7bae-4033-bec9-477ecfb47bd5
-# ╟─5e2302ad-2e33-4788-9ea9-0a44b9603b5c
-# ╟─b89fb2e2-a3cd-44e7-942a-b09c51deee18
+# ╠═1746ff45-7bae-4033-bec9-477ecfb47bd5
 # ╟─aafc01fd-ca3d-4f73-875a-027f68996789
 # ╟─826b8cc7-e2fb-4217-9737-0fa7119dca8d
-# ╟─8db7f71e-0bcc-40c1-be67-7177b251ddae
-# ╟─2b67027a-77a0-40c0-9afc-f52da41d9b2b
+# ╠═8db7f71e-0bcc-40c1-be67-7177b251ddae
 # ╟─58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
 # ╠═48e4ae5d-5423-442c-9b4e-712f42b84bc2
 # ╠═c00ec842-85a5-4554-94ce-628f28d34b09
 # ╠═211756ce-1b62-491b-9914-a82cfdb663fa
 # ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
-# ╠═6b76b17f-0328-4b35-90ba-b149b61cb63c
-# ╟─79361e3a-2560-4c5a-9b46-4f7bf806a4b3
-# ╟─0df3e1b9-dab5-4087-b5ba-c89f67f67380
+# ╠═9b8c48ab-3b38-4eb6-80ed-df1dedbd2b4e
+# ╟─6b76b17f-0328-4b35-90ba-b149b61cb63c
+# ╠═79361e3a-2560-4c5a-9b46-4f7bf806a4b3
+# ╠═0df3e1b9-dab5-4087-b5ba-c89f67f67380
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
 # ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
@@ -936,4 +941,4 @@ Bilder: https://www.deviantart.com/zeekthehedgie/art/Pixel-Luigi-708455637
 # ╠═57aead97-1213-4e4b-8c94-27121b5f1592
 # ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
-# ╟─c4862dba-90dc-458f-b70a-073eae112f28
+# ╠═c4862dba-90dc-458f-b70a-073eae112f28
