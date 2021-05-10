@@ -9,12 +9,7 @@ using InteractiveUtils
 begin
 	import Pkg
 	using Pkg
-	Pkg.add(["PlutoUI", "Images", "TestImages", "ImageTransformations", "ImageIO", "DSP"])
-	#Pkg.add("Images")
-	#Pkg.add("TestImages")
-	#Pkg.add("ImageTransformations")
-	using DSP
-	using ImageIO
+	Pkg.add(["PlutoUI", "Images", "TestImages", "ImageTransformations"])
 	using ImageTransformations
 	using TestImages
 	using Images
@@ -123,7 +118,7 @@ md"# Praktische Beispiele und Vergleich mit anderen Algorithmen"
 # ╔═╡ bfa6f004-e3ab-4363-ab76-b14de80b272a
 html"""<style>
 main {
-    max-width: 1200px;
+    max-width: 900px;
 }
 """
 
@@ -377,12 +372,12 @@ image_section(original_image)
 
 # ╔═╡ c7aa1107-4e59-47da-af70-ae7608bc6065
 md"## Bayer Farbfilter
-- Photozellen können nur Helligkeitswerte erfassen
+- Photozellen einer Kamera können nur Helligkeitswerte erfassen
 - vor jeder Zelle kleiner physikalischer Farbfilter in einen der drei Grundfarben
 - Menschliches Auge erkennt Grün am besten
 → 50 % Grün, der Rest ist Blau und Rot
 
-Der Bayerfarbfilter eines Bildes ist der Input für die Demosaicing Algorithmen.
+Der Bayer Farbfilter eines Bildes ist der Input für die Demosaicing Algorithmen.
 "
 
 # ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
@@ -400,12 +395,15 @@ begin
 end
 
 # ╔═╡ 1768def4-ce6b-4e77-835c-1049cdda2cd7
-md"Vergleich des Originalbildes mit dem Bayerfilter"
+md"Vergleich des Originalbildes mit dem Bayer Frabfilter"
 
 # ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
 begin
 	imresize([image_section(original_image) image_section(bayer_image)], ratio=5)
 end
+
+# ╔═╡ e0532011-821c-4991-b982-db114cde65cf
+md"Ziel des Demosaicing ist die bestmögliche Rekonstruktion der Farbwerte aus dem Bayer Farbfilter."
 
 # ╔═╡ c1e450f0-862a-4ec9-aae0-0a64fd660d19
 md"## Bilineare Interpolation
@@ -555,6 +553,7 @@ end
 # ╔═╡ 58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
 md"## Adaptive Color Plane Interpolation (ACPI)
 ACPI verbessert das Demosaicing Ergebniss weiter, indem Mittelungen nur noch entlang von Kanten und nicht mehr senkrecht dazu erfolgen
+
 `acpi_reconstruct_green_channel(bayer_filter)`:
 - Berechnung des Gradienten in horizontaler und vertikaler Richtung
 - Rekonstruktion des Grünkanals"
@@ -571,7 +570,7 @@ function acpi_reconstruct_green_channel(bayer_filter)
 		# 1.2 vertikaler gradient
 		g_vertical = abs(sum_green_channel(bayer_filter, (row, column), (top, 1), (bottom, -1))) + abs(sum_red_channel(bayer_filter, (row, column), (top_top, -1), (current, 2), (bottom_bottom, -1)))
 		
-# horizontaler gradient größer => vertikale kante => vertikale grünwerte für berechnung sinnvoller, da hier keine großen farbänderungen auftreten
+# horizontaler gradient größer => vertikale kante => vertikale grünwerte für Berechnung sinnvoller, da hier keine großen Farbänderungen auftreten
 		green = 0
 		if g_vertical > g_horizontal
 			# horizontale bilineare interpolation
@@ -585,7 +584,7 @@ function acpi_reconstruct_green_channel(bayer_filter)
 			green += 0.25 * sum_red_channel(bayer_filter, (row, column), (top_top, -1), (current, 2), (bottom_bottom, -1))
 		end
 		
-		# grünwert zum rekonstruieren des grünkanals setzen
+		# grünwert zum Rekonstruieren des grünkanals setzen
 		green = clamp(green, 0.0, 1.0)
 		acpi_green_channel[row, column] = RGB(bayer_filter[row, column].r, green, 0)
 	end
@@ -744,6 +743,9 @@ md"### Original Bild / Bilineare Interpolation / HQLIN / ACPI"
 
 # ╔═╡ 0df3e1b9-dab5-4087-b5ba-c89f67f67380
  imresize([image_section(original_image) image_section(image_bilin) image_section(image_hqlin) image_section(acpi_image)], ratio=5)
+
+# ╔═╡ 2c514fdb-d728-41db-bfba-1ea757b41b4d
+ imresize([original_image[50:100, 90:110] image_bilin[50:100, 90:110] image_hqlin[50:100, 90:110] acpi_image[50:100, 90:110]], ratio=5)
 
 # ╔═╡ be312185-0455-4ad0-8972-ce251038d999
 md"## Verbesserter ACPI Algorithmus"
@@ -960,7 +962,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
 # ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
-# ╠═bfa6f004-e3ab-4363-ab76-b14de80b272a
+# ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
 # ╟─8e3044b1-3841-4e67-8874-860a6bff1e73
 # ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
@@ -982,6 +984,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─8c1b7413-9b9e-44d0-9701-ade1fd3de536
 # ╟─1768def4-ce6b-4e77-835c-1049cdda2cd7
 # ╟─1be3ace0-de06-4bd1-9d31-baaa9b154b18
+# ╟─e0532011-821c-4991-b982-db114cde65cf
 # ╟─c1e450f0-862a-4ec9-aae0-0a64fd660d19
 # ╟─c9f06538-02ec-4dd5-a915-0140741b041f
 # ╟─1746ff45-7bae-4033-bec9-477ecfb47bd5
@@ -1000,6 +1003,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─6b76b17f-0328-4b35-90ba-b149b61cb63c
 # ╟─79361e3a-2560-4c5a-9b46-4f7bf806a4b3
 # ╟─0df3e1b9-dab5-4087-b5ba-c89f67f67380
+# ╟─2c514fdb-d728-41db-bfba-1ea757b41b4d
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
 # ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
