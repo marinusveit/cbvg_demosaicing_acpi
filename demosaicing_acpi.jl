@@ -345,30 +345,27 @@ end
 md"## Beispielbilder"
 
 # ╔═╡ 8b31c48b-c90e-473c-b2f8-fe514f761406
-md"- Bild downloaden
-- Bild in Notebook laden
-- Bildgröße reduzieren"
+md"Bild in Notebook laden und die Bildgröße reduzieren. Dadurch sind die Unterschiede in den verschiedenen Demosaicing Algorithmen später besser erkennbar"
 
 # ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
 begin
-	url="http://sipi.usc.edu/database/preview/misc/4.1.05.png"
-	download(url, "house.png")
+	#url="http://sipi.usc.edu/database/preview/misc/4.1.05.png"
+	#download(url, "house.png")
 	original_image = load("house.png")
-	#original_image = decimate(original_image, 2)
+	original_image = decimate(original_image, 2) # nur jedes 2. Pixel des Originalbildes
 end
-
-# ╔═╡ 6aabb223-d22f-4ad2-a6f1-291cb7a4b256
-md"##### Bild in Notebook laden und die größe reduzieren"
 
 # ╔═╡ bf683c6e-bf61-47c3-9556-2cc9fec7f3e0
 image_section(original_image)
 
 # ╔═╡ c7aa1107-4e59-47da-af70-ae7608bc6065
 md"##### Bayer Farbfilter
-- Photozelle auf dem Halbleiter können nur Helligkeitswerte erfassen
-- vor jeder Zelle kleiner Farbfilter in einen der drei Grundfarben
-- 50 % G
-Da die Kamera nurDer Bayerfarbfilter eines Bildes ist der Input für die Demosaicing Algorithmen.
+- Photozellen können nur Helligkeitswerte erfassen
+- vor jeder Zelle kleiner physikalischer Farbfilter in einen der drei Grundfarben
+- Menschliches Auge erkennt Grün am besten
+→ 50 % Grün, der Rest ist Blau und Rot
+
+Der Bayerfarbfilter eines Bildes ist der Input für die Demosaicing Algorithmen.
 "
 
 # ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
@@ -377,15 +374,16 @@ begin
 end
 
 # ╔═╡ 5d426f07-37d7-4c56-95cf-50d3fa6d25ac
-md"### Bayer-Matrix"
+md"### Bayer-Matrix
+Hier ein kleiner Ausschnitt des Bayerfilters unseres Testbildes."
 
 # ╔═╡ 8c1b7413-9b9e-44d0-9701-ade1fd3de536
 begin
-	bayer_image[50:60,50:60]
+	bayer_image[10:20,10:20]
 end
 
 # ╔═╡ 1768def4-ce6b-4e77-835c-1049cdda2cd7
-md"### Original / Bayer Farbfilter"
+md"Vergleich des Originalbildes mit dem Bayerfilter"
 
 # ╔═╡ 1be3ace0-de06-4bd1-9d31-baaa9b154b18
 begin
@@ -393,7 +391,8 @@ begin
 end
 
 # ╔═╡ c1e450f0-862a-4ec9-aae0-0a64fd660d19
-md"### Bilineare Interpolation"
+md"### Bilineare Interpolation
+Die bilineare Interpolation ist ein sehr einfacher Demosaicing Algorithmus. Folgende Abbildung zeigt das Ergebnis, wenn man die bilineare Interpolation auf den Bayerfilter anwendet"
 
 # ╔═╡ c9f06538-02ec-4dd5-a915-0140741b041f
 # ohne randbetrachtung (randpixel bleiben noch unverändert)
@@ -433,10 +432,13 @@ function bilineare_interpolation(bayer_filter)
 end
 
 # ╔═╡ 1746ff45-7bae-4033-bec9-477ecfb47bd5
-image_bilin = bilineare_interpolation(bayer_image)
+begin
+	image_bilin = bilineare_interpolation(bayer_image)
+	imresize(image_bilin, ratio=3)
+end
 
 # ╔═╡ aafc01fd-ca3d-4f73-875a-027f68996789
-md"### HQLIN"
+md"### High Quality Linear Demosacing (HQLIN)"
 
 # ╔═╡ 826b8cc7-e2fb-4217-9737-0fa7119dca8d
 function hqlin(bayer_filter)
@@ -527,7 +529,10 @@ function hqlin(bayer_filter)
 end
 
 # ╔═╡ 8db7f71e-0bcc-40c1-be67-7177b251ddae
-image_hqlin = hqlin(bayer_image)
+begin
+	image_hqlin = hqlin(bayer_image)
+	imresize(image_hqlin, ratio=3)
+end
 
 # ╔═╡ 58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
 md"### ACPI"
@@ -904,15 +909,14 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╠═98ed88b4-6359-48e4-8163-5904dea355a7
 # ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
 # ╟─8b31c48b-c90e-473c-b2f8-fe514f761406
-# ╠═92c26370-a774-11eb-163a-3b4671b8c14b
-# ╟─6aabb223-d22f-4ad2-a6f1-291cb7a4b256
+# ╟─92c26370-a774-11eb-163a-3b4671b8c14b
 # ╠═bf683c6e-bf61-47c3-9556-2cc9fec7f3e0
 # ╟─c7aa1107-4e59-47da-af70-ae7608bc6065
-# ╠═e5530339-75e8-4441-9e7a-0f9356c217da
+# ╟─e5530339-75e8-4441-9e7a-0f9356c217da
 # ╟─5d426f07-37d7-4c56-95cf-50d3fa6d25ac
-# ╠═8c1b7413-9b9e-44d0-9701-ade1fd3de536
-# ╠═1768def4-ce6b-4e77-835c-1049cdda2cd7
-# ╠═1be3ace0-de06-4bd1-9d31-baaa9b154b18
+# ╟─8c1b7413-9b9e-44d0-9701-ade1fd3de536
+# ╟─1768def4-ce6b-4e77-835c-1049cdda2cd7
+# ╟─1be3ace0-de06-4bd1-9d31-baaa9b154b18
 # ╟─c1e450f0-862a-4ec9-aae0-0a64fd660d19
 # ╟─c9f06538-02ec-4dd5-a915-0140741b041f
 # ╠═1746ff45-7bae-4033-bec9-477ecfb47bd5
