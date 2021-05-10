@@ -133,6 +133,21 @@ md"## Imports"
 # ╔═╡ 08647a94-2dcb-4087-a8ed-07813b24061d
 md"## Funktionsdefinitonen"
 
+# ╔═╡ b3aa857a-2a20-4a9a-b0c4-a4085b21eafd
+function black_white_img(size)
+	bwimg = rand(RGB, size, size)
+	for row=1:1:size
+		for column=1:1:size
+			if row<=size/2 && column<=size/2 || row>size/2 && column>size/2
+				bwimg[row, column]=RGB(1.0, 1.0, 1.0)
+			else
+				bwimg[row, column]=RGB(0.0, 0.0, 0.0)
+			end
+		end
+	end
+	return bwimg
+end
+
 # ╔═╡ 8d35277d-f963-48ed-b472-ca44ccb972be
 decimate(image, ratio=5) = image[1:ratio:end, 1:ratio:end]
 
@@ -625,10 +640,10 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 	# grünes hotpixel
 	for (row, column) in green_red_hotpixels(acpi_green_channel)
 		red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), left, right) 
-			  + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (left, -1), (current, 2), (right, -1))
+		red += 0.5 * sum_green_channel(acpi_green_channel, (row, column), (left, -1), (current, 2), (right, -1))
 		
 		blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), bottom, top)
-			   + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (bottom, -1), (current, 2), (top, -1))
+		blue += 0.5 * sum_green_channel(acpi_green_channel, (row, column), (bottom, -1), (current, 2), (top, -1))
 
 		# nur noch werte zwischen 0 und 1
 		red = clamp(red, 0.0, 1.0)
@@ -642,10 +657,10 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
 		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) 
-				+ abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
+		g_neg += abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (rechts oben nach links unten)
 		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) 
-				+ abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
+		g_pos += abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
 		# diagonal negativer gradient kleiner => diagonal negative grünwerte für Berechnung sinnvoller
 		if g_neg < g_pos
@@ -666,9 +681,11 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 		# rekonstruieren des blaukanals
 		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
-		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
+		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1)))
+		g_neg += abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (links oben nach rechts unten)
-		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
+		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1)))
+		g_pos += abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
 		# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
 		if g_neg < g_pos # TODO: prüfen ob buch hier falsch liegt
@@ -685,8 +702,10 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 		
 	# grünes hotpixel
 	for (row, column) in green_blue_hotpixels(acpi_green_channel)
-		red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), bottom, top) + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (bottom, -1), (current, 2), (top, -1))
-		blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), left, right) + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (left, -1), (current, 2), (right, -1))
+		red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), bottom, top)
+		red += 0.5 * sum_green_channel(acpi_green_channel, (row, column), (bottom, -1), (current, 2), (top, -1))
+		blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), left, right)
+		blue += 0.5 * sum_green_channel(acpi_green_channel, (row, column), (left, -1), (current, 2), (right, -1))
 		
 		# nur noch werte zwischen 0 und 1
 		red = clamp(red, 0.0, 1.0)
@@ -741,9 +760,11 @@ function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel)
 		# rekonstruieren des Blaukanals
 		# 1. Gradienten bestimmen
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
-		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
+		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1)))
+		g_neg += abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (rechts oben nach links unten)
-		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
+		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1)))
+		g_pos += abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
 		# diagonal positiver gradient größer => rekonstruktion in diagonal negative Richtung
 		if g_neg <= g_pos
@@ -763,9 +784,11 @@ function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel)
 		# rekonstruieren des blaukanals
 		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
-		g_neg = abs(sum_red_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
+		g_neg = abs(sum_red_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1)))
+		g_neg += abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (links oben nach rechts unten)
-		g_pos = abs(sum_red_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
+		g_pos = abs(sum_red_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1)))
+		g_pos += abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
 		# diagonal positiver gradient größer => rekonstruktion in diagonal negative Richtung
 		if g_neg <= g_pos
@@ -787,9 +810,10 @@ function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel)
 	for (row, column) in [reshape(green_red_hotpixels(acpi_green_channel), :, 1) ; reshape(green_blue_hotpixels(acpi_green_channel), :, 1)]
 		
 		# Rot rekonstruieren:
-		g_horizontal_red = abs(sum_red_channel(acpi, (row, column), (left, 1), (right, -1))) + abs(sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1)))
-		g_vertical_red = abs(sum_red_channel(acpi, (row, column), (top, 1), (bottom, -1))) + 
-abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)))
+		g_horizontal_red = abs(sum_red_channel(acpi, (row, column), (left, 1), (right, -1)))
+		g_horizontal_red += abs(sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1)))
+		g_vertical_red = abs(sum_red_channel(acpi, (row, column), (top, 1), (bottom, -1)))
+		g_vertical_red += abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)))
 		
 		if g_horizontal_red > g_vertical_red
 			red = 0.5 * sum_red_channel(acpi, (row, column), top, bottom)
@@ -800,9 +824,10 @@ abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)
 		end
 		
 		# Blau rekonstruieren
-		g_horizontal_blue = abs(sum_blue_channel(acpi, (row, column), (left, 1), (right, -1))) + abs(sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1)))
-		g_vertical_blue = abs(sum_blue_channel(acpi, (row, column), (top, 1), (bottom, -1))) + 
-abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)))
+		g_horizontal_blue = abs(sum_blue_channel(acpi, (row, column), (left, 1), (right, -1)))
+		g_horizontal_blue += abs(sum_green_channel(acpi, (row, column), (left, -1), (current, 2), (right, -1)))
+		g_vertical_blue = abs(sum_blue_channel(acpi, (row, column), (top, 1), (bottom, -1)))
+		g_vertical_blue += abs(sum_green_channel(acpi, (row, column), (top, -1), (current, 2), (bottom, -1)))
 		
 		if g_horizontal_blue > g_vertical_blue
 			blue = 0.5 * sum_blue_channel(acpi, (row, column), top, bottom)
@@ -832,44 +857,56 @@ md"### Vergleich Ergebnis ACPI / ACPI-Improved"
 # ╔═╡ 8252df35-e34d-4b2a-b486-5da09ece671f
 begin
 	acpi_impr_image = acpi_improved(bayer_image)
-	acpi_comp = [acpi_image acpi_impr_image]
+	#acpi_comp = [acpi_image acpi_impr_image]
+	acpi_comp = [image_section(acpi_image) image_section(acpi_impr_image)]
 	imresize(acpi_comp, ratio=5)
 end
 
-# ╔═╡ bd600deb-4487-4ddc-93d3-0732c3756222
+# ╔═╡ 28bd8a5f-21c7-4d3c-88bb-bc57dae72562
+[bayer_image[63:77, 93:107] acpi_image[63:77, 93:107] acpi_impr_image[63:77, 93:107]]
+
+# ╔═╡ 306354e6-44a2-4772-971c-7eabefc14063
+black_white_img(20)
+
+# ╔═╡ a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
+md"
+### Vergleich: BayerFilter, ACPI und ACPI-Improved
+Zipper-Effekte die durch diagonales Sampling entstehen, werden entlang der Kante geglättet
+"
+
+# ╔═╡ 9c144a8a-0870-46e9-9dfa-d36c24f78bc1
 begin
-	# detailed view for[acpi_luigi[45:90, 25:70] acpi_impr_luigi[45:90, 25:70]]	
-	# and [bayer_luigi[57:60, 28:31] acpi_luigi[57:60, 28:31] acpi_impr_luigi[57:60, 28:31]]
-	md"
-
-![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_compare.png)
-
-![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_improved_edge_compare.png)
-	"
+	bw = black_white_img(40)
+	bw_bayer = bayer_colorfilter(bw)
+	acpi_bw = acpi(bw_bayer)
+	acpi_impr_bw = acpi_improved(bw_bayer)
+	[bw_bayer acpi_bw acpi_impr_bw]
+	#imresize([bw_bayer acpi_bw acpi_impr_bw],ratio=8)
 end
 
-# ╔═╡ b10ff028-7b2f-4f13-8c57-c48094b45d0a
+# ╔═╡ c44defad-8827-45a6-b29c-e45e1f742224
 md"
-Blaues Hotpixel:
-rgb = ($(acpi_image[58,29].r), $(acpi_image[58,29].g), $(acpi_image[58,29].b))
+Detailansicht
 "
 
-# ╔═╡ c6055fb7-85eb-4fd7-9c97-f8e1b0c8c2ca
-acpi_image[58,29]
+# ╔═╡ 34a7bc14-c84d-48c1-bbb4-704a3d11f68d
+begin
+	[bw_bayer[18:23, 14:18] acpi_bw[18:23, 14:18] acpi_impr_bw[18:23, 14:18]]
+end
 
-# ╔═╡ 7fbe514f-cb80-42fb-b19b-957eb5a46d29
+# ╔═╡ 4475195a-aab5-4c1a-ac70-7d2b033be348
 md"
-Rotes Hotpixel:
-rgb = ($(acpi_luigi[59,30].r), $(acpi_luigi[59,30].g), $(acpi_luigi[59,30].b))
-"
+Zur Erinnerung:
 
-# ╔═╡ 64801f9b-1656-4edd-8ab6-f9976c4d27a9
-acpi_image[59,30]
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/gradient_pixel_d.png)
 
-# ╔═╡ 57aead97-1213-4e4b-8c94-27121b5f1592
-md"
-Fuer die blauen hotpixel wird der rotwert reduziert (durch diagonales interpolieren mit schwarz -> r=0)
-Fuer die Roten Hotpixel wird blau gesetzt (durch diagonales interpolieren)
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d.png)
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d2.png)
+
+Durch das diagonale Interpolieren entsteht an Kanten ein Zipper-Effekt
+
+Werden grüne Hotpixel nun im verbesserten ACPI Algorithmus entlang von Kanten rekonstruiert, werden diese Zipper geglättet.
 "
 
 # ╔═╡ 6fe25fc4-dc21-49bc-bff6-0e65d714761e
@@ -878,8 +915,10 @@ begin
 	hqlin_mse = mean_square_error(original_image, image_hqlin)
 	acpi_mse = mean_square_error(original_image, acpi_image)
 	acpi_impr_mse = mean_square_error(original_image, acpi_impr_image)
-	md"
-#### Vergleich Abweichung vom Originalbild
+md"
+### Vergleich: Abweichung vom Originalbild für verschiedene Demosaicing Verfahren
+
+am Beispiel des roten Haus:
 	
 | Demosaicing Algorithmus        | Mean Squared Error| Mean Error             |
 | ------------------------------ |:----------------- |:---------------------- |
@@ -900,7 +939,7 @@ Pro:
 Contra:
 - Der Rechenaufwand wird verdoppelt, da für jeden Farbwert erst die zwei Gradienten berechnet werden müssen
 - Reihenfolge der Farbwertberechnung entscheidend (Grün -> Rot / Blau)
-- Schlechter parallelisierbar
+- dadurch schlechter parallelisierbar
 
 "
 
@@ -925,13 +964,14 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─8e3044b1-3841-4e67-8874-860a6bff1e73
 # ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
+# ╟─b3aa857a-2a20-4a9a-b0c4-a4085b21eafd
 # ╟─8d35277d-f963-48ed-b472-ca44ccb972be
 # ╟─5f647aac-e087-482a-af80-733fb387b73d
 # ╟─ef83b17c-b66c-4734-aebe-6a6d9390b914
 # ╟─429b0bc0-4e24-48b6-807d-08bb5f39aae2
 # ╟─39502556-161a-4efc-864b-fcf1755db8a4
 # ╟─955c3038-6203-43c3-b453-0e483725ae9b
-# ╠═98ed88b4-6359-48e4-8163-5904dea355a7
+# ╟─98ed88b4-6359-48e4-8163-5904dea355a7
 # ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
 # ╟─8b31c48b-c90e-473c-b2f8-fe514f761406
 # ╟─92c26370-a774-11eb-163a-3b4671b8c14b
@@ -963,14 +1003,15 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
 # ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
-# ╠═f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
+# ╟─f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
 # ╠═8252df35-e34d-4b2a-b486-5da09ece671f
-# ╠═bd600deb-4487-4ddc-93d3-0732c3756222
-# ╟─b10ff028-7b2f-4f13-8c57-c48094b45d0a
-# ╟─c6055fb7-85eb-4fd7-9c97-f8e1b0c8c2ca
-# ╠═7fbe514f-cb80-42fb-b19b-957eb5a46d29
-# ╟─64801f9b-1656-4edd-8ab6-f9976c4d27a9
-# ╟─57aead97-1213-4e4b-8c94-27121b5f1592
+# ╠═28bd8a5f-21c7-4d3c-88bb-bc57dae72562
+# ╟─306354e6-44a2-4772-971c-7eabefc14063
+# ╟─a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
+# ╟─9c144a8a-0870-46e9-9dfa-d36c24f78bc1
+# ╟─c44defad-8827-45a6-b29c-e45e1f742224
+# ╟─34a7bc14-c84d-48c1-bbb4-704a3d11f68d
+# ╟─4475195a-aab5-4c1a-ac70-7d2b033be348
 # ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
 # ╟─c4862dba-90dc-458f-b70a-073eae112f28
