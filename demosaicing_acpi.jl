@@ -123,7 +123,7 @@ md"# Praktische Beispiele und Vergleich mit anderen Algorithmen"
 # ╔═╡ bfa6f004-e3ab-4363-ab76-b14de80b272a
 html"""<style>
 main {
-    max-width: 900px;
+    max-width: 1200px;
 }
 """
 
@@ -342,7 +342,7 @@ function image_section(image)
 end
 
 # ╔═╡ e1afac97-a82e-4f52-89b5-7d3359c870f5
-md"## Beispielbilder"
+md"### Beispielbild"
 
 # ╔═╡ 8b31c48b-c90e-473c-b2f8-fe514f761406
 md"Bild in Notebook laden und die Bildgröße reduzieren. Dadurch sind die Unterschiede in den verschiedenen Demosaicing Algorithmen später besser erkennbar"
@@ -359,7 +359,7 @@ end
 image_section(original_image)
 
 # ╔═╡ c7aa1107-4e59-47da-af70-ae7608bc6065
-md"##### Bayer Farbfilter
+md"### Bayer Farbfilter
 - Photozellen können nur Helligkeitswerte erfassen
 - vor jeder Zelle kleiner physikalischer Farbfilter in einen der drei Grundfarben
 - Menschliches Auge erkennt Grün am besten
@@ -438,7 +438,8 @@ begin
 end
 
 # ╔═╡ aafc01fd-ca3d-4f73-875a-027f68996789
-md"### High Quality Linear Demosacing (HQLIN)"
+md"### High Quality Linear Demosacing (HQLIN)
+Idee: Tiefpass-filternde Wirkung der bilinearen Inerpolation durch Addition des Laplace Anteils reduzieren"
 
 # ╔═╡ 826b8cc7-e2fb-4217-9737-0fa7119dca8d
 function hqlin(bayer_filter)
@@ -535,7 +536,11 @@ begin
 end
 
 # ╔═╡ 58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
-md"### ACPI"
+md"### Adaptive Color Plane Interpolation (ACPI)
+ACPI verbessert das Demosaicing Ergebniss weiter, indem Mittelungen nur noch entlang von Kanten und nicht mehr senkrecht dazu erfolgen
+`acpi_reconstruct_green_channel(bayer_filter)`:
+- Berechnung des Gradienten in horizontaler und vertikaler Richtung
+- Rekonstruktion des Grünkanals"
 
 # ╔═╡ 48e4ae5d-5423-442c-9b4e-712f42b84bc2
 function acpi_reconstruct_green_channel(bayer_filter)
@@ -549,7 +554,7 @@ function acpi_reconstruct_green_channel(bayer_filter)
 		# 1.2 vertikaler gradient
 		g_vertical = abs(sum_green_channel(bayer_filter, (row, column), (top, 1), (bottom, -1))) + abs(sum_red_channel(bayer_filter, (row, column), (top_top, -1), (current, 2), (bottom_bottom, -1)))
 		
-		# horizontaler gradient größer => vertikale kante => vertikale grünwerte für berechnung sinnvoller, da hier keine großen farbänderungen sind
+# horizontaler gradient größer => vertikale kante => vertikale grünwerte für berechnung sinnvoller, da hier keine großen farbänderungen auftreten
 		green = 0
 		if g_vertical > g_horizontal
 			# horizontale bilineare interpolation
@@ -604,15 +609,24 @@ begin
 	[bayer_image acpi_green_image]
 end
 
+# ╔═╡ f1959a0f-7dbc-470d-9d23-6a6883b4c335
+md"`acpi_reconstruct_red_blue_channel(acpi_green_channel)`:
+- Gradienten in diagonaler Richtung mit Hilfe des rekonstruierten Grünkanals bestimmen
+- Blau- und Rotkanal rekonstruieren"
+
 # ╔═╡ 211756ce-1b62-491b-9914-a82cfdb663fa
 function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 	acpi = copy(acpi_green_channel)
 	(height, width) = size(acpi_green_channel)
 
+	# ungerade Bildzeilen
 	# grünes hotpixel
 	for (row, column) in green_red_hotpixels(acpi_green_channel)
-		red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), left, right) + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (left, -1), (current, 2), (right, -1))
-		blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), bottom, top) + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (bottom, -1), (current, 2), (top, -1))
+		red = 0.5 * sum_red_channel(acpi_green_channel, (row, column), left, right) 
+			  + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (left, -1), (current, 2), (right, -1))
+		
+		blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), bottom, top)
+			   + 0.5 * sum_green_channel(acpi_green_channel, (row, column), (bottom, -1), (current, 2), (top, -1))
 
 		# nur noch werte zwischen 0 und 1
 		red = clamp(red, 0.0, 1.0)
@@ -625,15 +639,17 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 		# rekonstruieren des blaukanals
 		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
-		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
+		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) 
+				+ abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (rechts oben nach links unten)
-		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
+		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) 
+				+ abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
 		
-		# diagonal negativer gradient größer => diagonal positive grünwerte für berechnung sinnvoller
-		if g_neg < g_pos # TODO: prüfen ob buch hier falsch liegt
+		# diagonal negativer gradient kleiner => diagonal negative grünwerte für Berechnung sinnvoller
+		if g_neg < g_pos
 			blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), top_left, bottom_right)
 			blue += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1))
-		else
+		else # diagonal negativer gradient größer => diagonal positive grünwerte für Berechnung sinnvoller
 			blue = 0.5 * sum_blue_channel(acpi_green_channel, (row, column), top_right, bottom_left)
 			blue += 0.25 * sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1))
 		end
@@ -648,7 +664,6 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 		# rekonstruieren des blaukanals
 		# 1. Gradienten bestimmen => sehen wo eventuell eine Kante ist
 		# 1.1 diagonal negativer gradient (links oben nach rechts unten)
-		# TODO: wird auch in red benötigt => auslagern
 		g_neg = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_left, 1), (bottom_right, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_left, -1), (current, 2), (bottom_right, -1)))
 		# 1.2 diagonal positiver gradient (links oben nach rechts unten)
 		g_pos = abs(sum_blue_channel(acpi_green_channel, (row, column), (top_right, 1), (bottom_left, -1))) + abs(sum_green_channel(acpi_green_channel, (row, column), (top_right, -1), (current, 2), (bottom_left, -1)))
@@ -679,11 +694,19 @@ function acpi_reconstruct_red_blue_channel(acpi_green_channel)
 	return acpi
 end
 
+# ╔═╡ 490a92e7-d177-427a-9fec-742bc0fae5e5
+md"**`acpi(bayer_filter)`:**
+1. Grünkanal rekonstruieren: `green_channel = acpi_reconstruct_green_channel(bayer_filter)`
+2. Blau und Rotkanal rekonstruieren: `acpi_reconstruct_red_blue_channel(green_channel)`"
+
 # ╔═╡ bc8381e8-94ea-48a9-8897-61eb5826fae9
 function acpi(bayer_filter)
 	green_channel = acpi_reconstruct_green_channel(bayer_filter)
 	return acpi_reconstruct_red_blue_channel(green_channel)
 end
+
+# ╔═╡ d884903b-32cf-415c-8b52-5017090e3a19
+md"## Vergleich der erzeugten Bilder"
 
 # ╔═╡ 9b8c48ab-3b38-4eb6-80ed-df1dedbd2b4e
 md"### Original Bild / Bayer Farbfilter / rekonstruierter Grünkanal / ACPI"
@@ -896,7 +919,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
 # ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
-# ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
+# ╠═bfa6f004-e3ab-4363-ab76-b14de80b272a
 # ╟─8e3044b1-3841-4e67-8874-860a6bff1e73
 # ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
@@ -910,7 +933,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
 # ╟─8b31c48b-c90e-473c-b2f8-fe514f761406
 # ╟─92c26370-a774-11eb-163a-3b4671b8c14b
-# ╠═bf683c6e-bf61-47c3-9556-2cc9fec7f3e0
+# ╟─bf683c6e-bf61-47c3-9556-2cc9fec7f3e0
 # ╟─c7aa1107-4e59-47da-af70-ae7608bc6065
 # ╟─e5530339-75e8-4441-9e7a-0f9356c217da
 # ╟─5d426f07-37d7-4c56-95cf-50d3fa6d25ac
@@ -919,19 +942,22 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─1be3ace0-de06-4bd1-9d31-baaa9b154b18
 # ╟─c1e450f0-862a-4ec9-aae0-0a64fd660d19
 # ╟─c9f06538-02ec-4dd5-a915-0140741b041f
-# ╠═1746ff45-7bae-4033-bec9-477ecfb47bd5
+# ╟─1746ff45-7bae-4033-bec9-477ecfb47bd5
 # ╟─aafc01fd-ca3d-4f73-875a-027f68996789
 # ╟─826b8cc7-e2fb-4217-9737-0fa7119dca8d
-# ╠═8db7f71e-0bcc-40c1-be67-7177b251ddae
+# ╟─8db7f71e-0bcc-40c1-be67-7177b251ddae
 # ╟─58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
 # ╠═48e4ae5d-5423-442c-9b4e-712f42b84bc2
-# ╠═c00ec842-85a5-4554-94ce-628f28d34b09
+# ╟─c00ec842-85a5-4554-94ce-628f28d34b09
+# ╟─f1959a0f-7dbc-470d-9d23-6a6883b4c335
 # ╠═211756ce-1b62-491b-9914-a82cfdb663fa
-# ╠═bc8381e8-94ea-48a9-8897-61eb5826fae9
-# ╠═9b8c48ab-3b38-4eb6-80ed-df1dedbd2b4e
+# ╟─490a92e7-d177-427a-9fec-742bc0fae5e5
+# ╟─bc8381e8-94ea-48a9-8897-61eb5826fae9
+# ╟─d884903b-32cf-415c-8b52-5017090e3a19
+# ╟─9b8c48ab-3b38-4eb6-80ed-df1dedbd2b4e
 # ╟─6b76b17f-0328-4b35-90ba-b149b61cb63c
-# ╠═79361e3a-2560-4c5a-9b46-4f7bf806a4b3
-# ╠═0df3e1b9-dab5-4087-b5ba-c89f67f67380
+# ╟─79361e3a-2560-4c5a-9b46-4f7bf806a4b3
+# ╟─0df3e1b9-dab5-4087-b5ba-c89f67f67380
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
 # ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
