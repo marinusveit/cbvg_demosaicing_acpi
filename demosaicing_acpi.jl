@@ -344,7 +344,8 @@ md"## Beispielbilder"
 
 # ╔═╡ a136aaaf-d467-40fa-8fff-ad9817148e6c
 begin
-	luigi = load("pixel_luigi.jpg")
+	#luigi = load("pixel_luigi.jpg")
+	luigi = load("plane.png")
 end
 
 # ╔═╡ e5530339-75e8-4441-9e7a-0f9356c217da
@@ -886,7 +887,7 @@ Bilder: https://www.deviantart.com/zeekthehedgie/art/Pixel-Luigi-708455637
 # ╟─50b5fd6d-f293-4824-a5f4-ee9def287be3
 # ╟─8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
-# ╠═4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
+# ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
 # ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
@@ -897,7 +898,7 @@ Bilder: https://www.deviantart.com/zeekthehedgie/art/Pixel-Luigi-708455637
 # ╟─955c3038-6203-43c3-b453-0e483725ae9b
 # ╟─92c26370-a774-11eb-163a-3b4671b8c14b
 # ╟─e1afac97-a82e-4f52-89b5-7d3359c870f5
-# ╟─a136aaaf-d467-40fa-8fff-ad9817148e6c
+# ╠═a136aaaf-d467-40fa-8fff-ad9817148e6c
 # ╟─e5530339-75e8-4441-9e7a-0f9356c217da
 # ╟─5d426f07-37d7-4c56-95cf-50d3fa6d25ac
 # ╟─8c1b7413-9b9e-44d0-9701-ade1fd3de536
