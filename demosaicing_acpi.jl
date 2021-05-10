@@ -342,10 +342,12 @@ function image_section(image)
 end
 
 # ╔═╡ e1afac97-a82e-4f52-89b5-7d3359c870f5
-md"### Beispielbild"
+md"## Beispielbild"
 
 # ╔═╡ 8b31c48b-c90e-473c-b2f8-fe514f761406
-md"Bild in Notebook laden und die Bildgröße reduzieren. Dadurch sind die Unterschiede in den verschiedenen Demosaicing Algorithmen später besser erkennbar"
+md"Es wird ein Beispielbild geladen, mit dem die verschiedenen Demosaicing Algorithmen getestet und verglichen werden sollen.
+
+Dazu wird zunächst ein Bild in das Notebook geladen. Anschließend wird die Bildgröße reduziert, um die Unterschiede in den verschiedenen Demosaicing Algorithmen besser erkennbar zu machen."
 
 # ╔═╡ 92c26370-a774-11eb-163a-3b4671b8c14b
 begin
@@ -359,7 +361,7 @@ end
 image_section(original_image)
 
 # ╔═╡ c7aa1107-4e59-47da-af70-ae7608bc6065
-md"### Bayer Farbfilter
+md"## Bayer Farbfilter
 - Photozellen können nur Helligkeitswerte erfassen
 - vor jeder Zelle kleiner physikalischer Farbfilter in einen der drei Grundfarben
 - Menschliches Auge erkennt Grün am besten
@@ -391,7 +393,7 @@ begin
 end
 
 # ╔═╡ c1e450f0-862a-4ec9-aae0-0a64fd660d19
-md"### Bilineare Interpolation
+md"## Bilineare Interpolation
 Die bilineare Interpolation ist ein sehr einfacher Demosaicing Algorithmus. Folgende Abbildung zeigt das Ergebnis, wenn man die bilineare Interpolation auf den Bayerfilter anwendet"
 
 # ╔═╡ c9f06538-02ec-4dd5-a915-0140741b041f
@@ -438,7 +440,7 @@ begin
 end
 
 # ╔═╡ aafc01fd-ca3d-4f73-875a-027f68996789
-md"### High Quality Linear Demosacing (HQLIN)
+md"## High Quality Linear Demosacing (HQLIN)
 Idee: Tiefpass-filternde Wirkung der bilinearen Inerpolation durch Addition des Laplace Anteils reduzieren"
 
 # ╔═╡ 826b8cc7-e2fb-4217-9737-0fa7119dca8d
@@ -536,7 +538,7 @@ begin
 end
 
 # ╔═╡ 58e6f0ac-2e0a-4c3c-ad10-5bd6697cbc59
-md"### Adaptive Color Plane Interpolation (ACPI)
+md"## Adaptive Color Plane Interpolation (ACPI)
 ACPI verbessert das Demosaicing Ergebniss weiter, indem Mittelungen nur noch entlang von Kanten und nicht mehr senkrecht dazu erfolgen
 `acpi_reconstruct_green_channel(bayer_filter)`:
 - Berechnung des Gradienten in horizontaler und vertikaler Richtung
@@ -606,7 +608,7 @@ end
 # ╔═╡ c00ec842-85a5-4554-94ce-628f28d34b09
 begin
 	acpi_green_image = acpi_reconstruct_green_channel(bayer_image)
-	[bayer_image acpi_green_image]
+	imresize([bayer_image acpi_green_image], ratio=3)
 end
 
 # ╔═╡ f1959a0f-7dbc-470d-9d23-6a6883b4c335
@@ -725,7 +727,7 @@ md"### Original Bild / Bilineare Interpolation / HQLIN / ACPI"
  imresize([image_section(original_image) image_section(image_bilin) image_section(image_hqlin) image_section(acpi_image)], ratio=5)
 
 # ╔═╡ be312185-0455-4ad0-8972-ce251038d999
-md"### Verbesserter ACPI Algorithmus"
+md"## Verbesserter ACPI Algorithmus"
 
 # ╔═╡ b42bc451-71fd-48bf-b8c3-478b9de5d506
 function acpi_reconstruct_red_blue_channel_improved(acpi_green_channel)
@@ -904,7 +906,7 @@ Contra:
 
 # ╔═╡ c4862dba-90dc-458f-b70a-073eae112f28
 md"
-### Quellen:
+# Quellen:
 A. Nischwitz, M. Fischer, G. Socher, P. Haberäcker
 Bildverarbeitung, Band 2 des Standardwerks Computergrafik und Bildverarbeitung
 ISBN 978-3-658-28704-7
@@ -923,7 +925,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─8e3044b1-3841-4e67-8874-860a6bff1e73
 # ╟─3d6aecaa-a47e-4197-9f87-d34533f488ca
 # ╟─08647a94-2dcb-4087-a8ed-07813b24061d
-# ╠═8d35277d-f963-48ed-b472-ca44ccb972be
+# ╟─8d35277d-f963-48ed-b472-ca44ccb972be
 # ╟─5f647aac-e087-482a-af80-733fb387b73d
 # ╟─ef83b17c-b66c-4734-aebe-6a6d9390b914
 # ╟─429b0bc0-4e24-48b6-807d-08bb5f39aae2
@@ -961,14 +963,14 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
 # ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
-# ╟─f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
+# ╠═f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
 # ╠═8252df35-e34d-4b2a-b486-5da09ece671f
 # ╠═bd600deb-4487-4ddc-93d3-0732c3756222
 # ╟─b10ff028-7b2f-4f13-8c57-c48094b45d0a
 # ╟─c6055fb7-85eb-4fd7-9c97-f8e1b0c8c2ca
-# ╟─7fbe514f-cb80-42fb-b19b-957eb5a46d29
+# ╠═7fbe514f-cb80-42fb-b19b-957eb5a46d29
 # ╟─64801f9b-1656-4edd-8ab6-f9976c4d27a9
-# ╠═57aead97-1213-4e4b-8c94-27121b5f1592
+# ╟─57aead97-1213-4e4b-8c94-27121b5f1592
 # ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
-# ╠═c4862dba-90dc-458f-b70a-073eae112f28
+# ╟─c4862dba-90dc-458f-b70a-073eae112f28
