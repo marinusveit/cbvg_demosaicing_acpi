@@ -49,12 +49,10 @@ md"# Funktionsweise und Ziel des Algorithmus:
 - Bessere Vermeidung von Zipper – Effekten"
 
 
-# ╔═╡ f99556f6-4096-4690-bd94-30525163b8be
+# ╔═╡ 21faa1c1-68f9-4db2-9c17-d7a06f745e52
 md"
 ## Beispiel Original Bild vs. Bilineare Interpolation
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/exampleStart.png)"
-
-
 
 # ╔═╡ 4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 md"# Ablauf des Algorithmus:
@@ -288,7 +286,7 @@ end
 # ╔═╡ 429b0bc0-4e24-48b6-807d-08bb5f39aae2
 # Indexe der hotpixel bestimmen
 begin
-	# versuchen die grünpixel
+	#Der Bildrand wird nicht bearbeitet. An den Bildrändern könnte man Methoden wie das Zyklische Fortsetzen oder das Randpixel nach außen ausbreiten verwenden.
 	function green_red_hotpixels(image)
 		(height, width) = size(image)
 		return [(row, column) for column=3:2:width-2, row=3:2:height-2]
@@ -752,7 +750,7 @@ md"### Original Bild / Bilineare Interpolation / HQLIN / ACPI"
  imresize([image_section(original_image) image_section(image_bilin) image_section(image_hqlin) image_section(acpi_image)], ratio=5)
 
 # ╔═╡ 2c514fdb-d728-41db-bfba-1ea757b41b4d
- imresize([original_image[50:100, 90:110] image_bilin[50:100, 90:110] image_hqlin[50:100, 90:110] acpi_image[50:100, 90:110]], ratio=5)
+[original_image[50:100, 90:110] image_bilin[50:100, 90:110] image_hqlin[50:100, 90:110] acpi_image[50:100, 90:110]]
 
 # ╔═╡ be312185-0455-4ad0-8972-ce251038d999
 md"## Verbesserter ACPI Algorithmus"
@@ -871,11 +869,13 @@ begin
 	imresize(acpi_comp, ratio=5)
 end
 
-# ╔═╡ 28bd8a5f-21c7-4d3c-88bb-bc57dae72562
-[bayer_image[63:77, 93:107] acpi_image[63:77, 93:107] acpi_impr_image[63:77, 93:107]]
-
-# ╔═╡ 306354e6-44a2-4772-971c-7eabefc14063
-black_white_img(20)
+# ╔═╡ 4a228070-b157-4fb5-83b1-b85b3c31f40a
+#[bayer_image[63:77, 93:107] acpi_image[63:77, 93:107] acpi_impr_image[63:77, 93:107]]
+md"
+Detailausschnitt Dachrinne (BayerFilter, ACPI, ACPI Improved)
+	
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_improved_house_detail.png)
+"
 
 # ╔═╡ a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
 md"
@@ -883,29 +883,17 @@ md"
 Zipper-Effekte die durch diagonales Sampling entstehen, werden entlang der Kante geglättet
 "
 
-# ╔═╡ 9c144a8a-0870-46e9-9dfa-d36c24f78bc1
-begin
-	bw = black_white_img(40)
-	bw_bayer = bayer_colorfilter(bw)
-	acpi_bw = acpi(bw_bayer)
-	acpi_impr_bw = acpi_improved(bw_bayer)
-	[bw_bayer acpi_bw acpi_impr_bw]
-	#imresize([bw_bayer acpi_bw acpi_impr_bw],ratio=8)
-end
-
-# ╔═╡ c44defad-8827-45a6-b29c-e45e1f742224
+# ╔═╡ e8f81364-485c-4f61-be30-75f29548d198
 md"
-Detailansicht
-"
+Beispiel: Schwarz-Weiss Kanten"
 
-# ╔═╡ 34a7bc14-c84d-48c1-bbb4-704a3d11f68d
-begin
-	[bw_bayer[18:23, 14:18] acpi_bw[18:23, 14:18] acpi_impr_bw[18:23, 14:18]]
-end
+# ╔═╡ 306354e6-44a2-4772-971c-7eabefc14063
+black_white_img(20)
 
-# ╔═╡ 4475195a-aab5-4c1a-ac70-7d2b033be348
+# ╔═╡ e11352e5-3777-490a-a97b-94cd524f674b
 md"
 Zur Erinnerung:
+Diagonale Interpolation bei roten und blauen Hotpixeln
 
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/gradient_pixel_d.png)
 
@@ -913,10 +901,34 @@ Zur Erinnerung:
 
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d2.png)
 
-Durch das diagonale Interpolieren entsteht an Kanten ein Zipper-Effekt
 
-Werden grüne Hotpixel nun im verbesserten ACPI Algorithmus entlang von Kanten rekonstruiert, werden diese Zipper geglättet.
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_improved_black_white_edge.png)
+
+Detailansicht:
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/detail_acpi_improved_black_white_edge.png)
+
+Durch das diagonale Interpolieren entsteht an vertikalen/horizontalen Kanten ein Zipper-Effekt
+
+Werden Rot- und Blauwerte grüner Hotpixel nun im verbesserten ACPI Algorithmus entlang von Kanten rekonstruiert, werden diese Zipper geglättet
+(entscheidender Teil: B = 0.5 * (B_left + B_right))
 "
+
+# ╔═╡ 9c144a8a-0870-46e9-9dfa-d36c24f78bc1
+begin
+	bw_size=40
+	bw = black_white_img(bw_size)
+	bw_bayer = bayer_colorfilter(bw)
+	acpi_bw = acpi(bw_bayer)
+	acpi_impr_bw = acpi_improved(bw_bayer)
+	#Image comparisons used for Screenshots above
+	#don't show boarders which are not reconstructed
+	[bw_bayer[4:bw_size-4, 4:bw_size-4] acpi_bw[4:bw_size-4, 4:bw_size-4] acpi_impr_bw[4:bw_size-4, 4:bw_size-4]]
+	[bw_bayer[18:23, 14:18] acpi_bw[18:23, 14:18] acpi_impr_bw[18:23, 14:18]]
+	md"
+	(Code: Vergleich Schwarz-Weiss Kanten)
+	"
+end
 
 # ╔═╡ 6fe25fc4-dc21-49bc-bff6-0e65d714761e
 begin
@@ -967,7 +979,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─50b5fd6d-f293-4824-a5f4-ee9def287be3
 # ╟─8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
-# ╟─f99556f6-4096-4690-bd94-30525163b8be
+# ╟─21faa1c1-68f9-4db2-9c17-d7a06f745e52
 # ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
 # ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
@@ -1014,16 +1026,15 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─2c514fdb-d728-41db-bfba-1ea757b41b4d
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
-# ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
+# ╟─4911dcb5-16e4-49ac-b0a8-1147f373eb03
 # ╟─f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
-# ╠═8252df35-e34d-4b2a-b486-5da09ece671f
-# ╠═28bd8a5f-21c7-4d3c-88bb-bc57dae72562
-# ╟─306354e6-44a2-4772-971c-7eabefc14063
+# ╟─8252df35-e34d-4b2a-b486-5da09ece671f
+# ╟─4a228070-b157-4fb5-83b1-b85b3c31f40a
 # ╟─a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
+# ╟─e8f81364-485c-4f61-be30-75f29548d198
+# ╟─306354e6-44a2-4772-971c-7eabefc14063
+# ╟─e11352e5-3777-490a-a97b-94cd524f674b
 # ╟─9c144a8a-0870-46e9-9dfa-d36c24f78bc1
-# ╟─c44defad-8827-45a6-b29c-e45e1f742224
-# ╟─34a7bc14-c84d-48c1-bbb4-704a3d11f68d
-# ╟─4475195a-aab5-4c1a-ac70-7d2b033be348
 # ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
 # ╟─c4862dba-90dc-458f-b70a-073eae112f28
