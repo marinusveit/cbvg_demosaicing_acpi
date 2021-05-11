@@ -49,12 +49,10 @@ md"# Funktionsweise und Ziel des Algorithmus:
 - Bessere Vermeidung von Zipper – Effekten"
 
 
-# ╔═╡ f99556f6-4096-4690-bd94-30525163b8be
+# ╔═╡ 21faa1c1-68f9-4db2-9c17-d7a06f745e52
 md"
 ## Beispiel Original Bild vs. Bilineare Interpolation
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/exampleStart.png)"
-
-
 
 # ╔═╡ 4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 md"# Ablauf des Algorithmus:
@@ -752,7 +750,7 @@ md"### Original Bild / Bilineare Interpolation / HQLIN / ACPI"
  imresize([image_section(original_image) image_section(image_bilin) image_section(image_hqlin) image_section(acpi_image)], ratio=5)
 
 # ╔═╡ 2c514fdb-d728-41db-bfba-1ea757b41b4d
- imresize([original_image[50:100, 90:110] image_bilin[50:100, 90:110] image_hqlin[50:100, 90:110] acpi_image[50:100, 90:110]], ratio=5)
+[original_image[50:100, 90:110] image_bilin[50:100, 90:110] image_hqlin[50:100, 90:110] acpi_image[50:100, 90:110]]
 
 # ╔═╡ be312185-0455-4ad0-8972-ce251038d999
 md"## Verbesserter ACPI Algorithmus"
@@ -981,7 +979,7 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─50b5fd6d-f293-4824-a5f4-ee9def287be3
 # ╟─8e4b86a1-8bdc-4191-ad33-9a33d7720bd6
 # ╟─b25ffb85-4841-45d9-abc7-6a4767a34eb0
-# ╟─f99556f6-4096-4690-bd94-30525163b8be
+# ╟─21faa1c1-68f9-4db2-9c17-d7a06f745e52
 # ╟─4bfe8fea-c5c2-4e7b-ac79-f42cf6c38a2a
 # ╟─07d8d0bb-1b5e-41fa-9315-dc8a408dca57
 # ╟─bfa6f004-e3ab-4363-ab76-b14de80b272a
