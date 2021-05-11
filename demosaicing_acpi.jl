@@ -123,7 +123,11 @@ md"# Ablauf des Algorithmus:
 md"# Praktische Beispiele und Vergleich mit anderen Algorithmen"
 
 # ╔═╡ bfa6f004-e3ab-4363-ab76-b14de80b272a
-
+html"""<style>
+main {
+	    max-width: 900px;
+}
+"""
 
 # ╔═╡ 8e3044b1-3841-4e67-8874-860a6bff1e73
 md"## Imports"
