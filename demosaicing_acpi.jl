@@ -92,7 +92,7 @@ md"# Ablauf des Algorithmus:
 
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d.png)
 
-![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d2.png)
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/main/bilder/formel_gradient_d2.png)
 
 
 
