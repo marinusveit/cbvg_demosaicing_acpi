@@ -868,12 +868,12 @@ begin
 end
 
 # ╔═╡ 4a228070-b157-4fb5-83b1-b85b3c31f40a
+#[bayer_image[63:77, 93:107] acpi_image[63:77, 93:107] acpi_impr_image[63:77, 93:107]]
 md"
 Detailausschnitt Dachrinne (BayerFilter, ACPI, ACPI Improved)
+	
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_improved_house_detail.png)
 "
-
-# ╔═╡ 28bd8a5f-21c7-4d3c-88bb-bc57dae72562
-[bayer_image[63:77, 93:107] acpi_image[63:77, 93:107] acpi_impr_image[63:77, 93:107]]
 
 # ╔═╡ a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
 md"
@@ -891,6 +891,7 @@ black_white_img(20)
 # ╔═╡ e11352e5-3777-490a-a97b-94cd524f674b
 md"
 Zur Erinnerung:
+Diagonale Interpolation bei roten und blauen Hotpixeln
 
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/gradient_pixel_d.png)
 
@@ -907,7 +908,8 @@ Detailansicht:
 
 Durch das diagonale Interpolieren entsteht an vertikalen/horizontalen Kanten ein Zipper-Effekt
 
-Werden grüne Hotpixel nun im verbesserten ACPI Algorithmus entlang von Kanten rekonstruiert, werden diese Zipper geglättet.
+Werden Rot- und Blauwerte grüner Hotpixel nun im verbesserten ACPI Algorithmus entlang von Kanten rekonstruiert, werden diese Zipper geglättet
+(entscheidender Teil: B = 0.5 * (B_left + B_right))
 "
 
 # ╔═╡ 9c144a8a-0870-46e9-9dfa-d36c24f78bc1
@@ -917,19 +919,13 @@ begin
 	bw_bayer = bayer_colorfilter(bw)
 	acpi_bw = acpi(bw_bayer)
 	acpi_impr_bw = acpi_improved(bw_bayer)
+	#Image comparisons used for Screenshots above
 	#don't show boarders which are not reconstructed
 	[bw_bayer[4:bw_size-4, 4:bw_size-4] acpi_bw[4:bw_size-4, 4:bw_size-4] acpi_impr_bw[4:bw_size-4, 4:bw_size-4]]
-	#imresize([bw_bayer acpi_bw acpi_impr_bw],ratio=8)
-end
-
-# ╔═╡ c44defad-8827-45a6-b29c-e45e1f742224
-md"
-Detailansicht
-"
-
-# ╔═╡ 34a7bc14-c84d-48c1-bbb4-704a3d11f68d
-begin
 	[bw_bayer[18:23, 14:18] acpi_bw[18:23, 14:18] acpi_impr_bw[18:23, 14:18]]
+	md"
+	(Code: Vergleich Schwarz-Weiss Kanten)
+	"
 end
 
 # ╔═╡ 6fe25fc4-dc21-49bc-bff6-0e65d714761e
@@ -1028,18 +1024,15 @@ Bilder: [USC Universiy of Southern California, Signal and Image Processing Insti
 # ╟─2c514fdb-d728-41db-bfba-1ea757b41b4d
 # ╟─be312185-0455-4ad0-8972-ce251038d999
 # ╠═b42bc451-71fd-48bf-b8c3-478b9de5d506
-# ╠═4911dcb5-16e4-49ac-b0a8-1147f373eb03
+# ╟─4911dcb5-16e4-49ac-b0a8-1147f373eb03
 # ╟─f47cc464-3d1a-4f39-bcfc-5ede3415fdc3
-# ╠═8252df35-e34d-4b2a-b486-5da09ece671f
+# ╟─8252df35-e34d-4b2a-b486-5da09ece671f
 # ╟─4a228070-b157-4fb5-83b1-b85b3c31f40a
-# ╟─28bd8a5f-21c7-4d3c-88bb-bc57dae72562
 # ╟─a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
 # ╟─e8f81364-485c-4f61-be30-75f29548d198
 # ╟─306354e6-44a2-4772-971c-7eabefc14063
-# ╠═e11352e5-3777-490a-a97b-94cd524f674b
+# ╟─e11352e5-3777-490a-a97b-94cd524f674b
 # ╟─9c144a8a-0870-46e9-9dfa-d36c24f78bc1
-# ╟─c44defad-8827-45a6-b29c-e45e1f742224
-# ╟─34a7bc14-c84d-48c1-bbb4-704a3d11f68d
 # ╟─6fe25fc4-dc21-49bc-bff6-0e65d714761e
 # ╟─75b637cb-30ec-40a6-9234-39e812ed96b4
 # ╟─c4862dba-90dc-458f-b70a-073eae112f28
