@@ -879,7 +879,7 @@ Detailausschnitt Dachrinne (BayerFilter, ACPI, ACPI Improved)
 
 # ╔═╡ a4b9cbdf-58a7-4ce7-ad46-1a8d1ff27050
 md"
-### Vergleich: BayerFilter, ACPI und ACPI-Improved
+### Vergleich: Bayer CFA, ACPI und ACPI-Improved
 Zipper-Effekte die durch diagonales Sampling entstehen, werden entlang der Kante geglättet
 "
 
@@ -888,7 +888,7 @@ md"
 Beispiel: Schwarz-Weiss Kanten"
 
 # ╔═╡ 306354e6-44a2-4772-971c-7eabefc14063
-black_white_img(20)
+black_white_img(80)
 
 # ╔═╡ e11352e5-3777-490a-a97b-94cd524f674b
 md"
@@ -901,12 +901,15 @@ Diagonale Interpolation bei roten und blauen Hotpixeln
 
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/formel_gradient_d2.png)
 
+Detailansicht Kante (Bayer CFA, ACPI, ACPI Improved):
+
+![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/detail_acpi_improved_black_white_edge.png)
+
+Vergleich (Bayer CFA, ACPI, ACPI Improved)
 
 ![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/acpi_improved_black_white_edge.png)
 
-Detailansicht:
 
-![alternative text](https://raw.githubusercontent.com/marinusveit/cbvg_demosaicing_acpi/develop/bilder/detail_acpi_improved_black_white_edge.png)
 
 Durch das diagonale Interpolieren entsteht an vertikalen/horizontalen Kanten ein Zipper-Effekt
 
